@@ -62,4 +62,4 @@ configure:
 	@echo "ROOT_SRC_DIR = $(ROOT_SRC_DIR)"  > makefile
 	@echo "include $(ROOT_SRC_DIR)/Makefile" >> makefile
 
-include $(ROOT_SRC_DIR)/me/Makefile
+include $(ROOT_SRC_DIR)/apps/Makefile

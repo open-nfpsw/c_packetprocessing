@@ -17,7 +17,5 @@
 # @brief          Makefiles for the firmware apps
 #
 
-me_scripts_dir = $(ROOT_SRC_DIR)/me/scripts
-me_apps_dir    = $(ROOT_SRC_DIR)/me/apps
-include $(me_apps_dir)/Makefile
-
+include $(ROOT_SRC_DIR)/apps/lab5/Makefile
+include $(ROOT_SRC_DIR)/apps/wire/Makefile
