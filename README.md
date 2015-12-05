@@ -1,9 +1,13 @@
 # Description
-This repo contains files necessary to build a firmware image for certain Netronome Flow Processor NICs (more details https://netronome.com).
+This repo contains files necessary to build a firmware image for certain
+Netronome Intelligent Server Adapters (more details https://netronome.com).
 
-The applications included here are firmware components useful for learning the basics of programming the Netronome Network Flow Processor (NFP) based NICs.
+The applications included here are firmware components useful for learning
+the basics of programming the Netronome Network Flow Processor (NFP) based
+Server Adapters.
 
-Some of the applications included were used as examples at the Netronome 'P4devcon' workshop (https://netronome.com/p4devcon/).
+Some of the applications included were used as examples at the Netronome
+'P4devcon' workshop (https://open-nfp.org/).
 
 # Directory Structure
 Several folders are in this repo:
