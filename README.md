@@ -7,7 +7,7 @@ the basics of programming the Netronome Network Flow Processor (NFP) based
 Server Adapters.
 
 Some of the applications included were used as examples at the Netronome
-'P4devcon' workshop (https://open-nfp.org/).
+'P4devcon' workshop (http://open-nfp.org/).
 
 # Directory Structure
 Several folders are in this repo:
