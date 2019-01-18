@@ -20,9 +20,119 @@
 #define _NFP__MEM_RING_H_
 
 #include <nfp.h>
+#include <nfp_chipres.h>
 #include <types.h>
 
 #if defined (__NFP_LANG_MICROC)
+
+/*
+ * Declare+initialize a ring in a specific MU
+ * @param _name         Name of the ring memory
+ * @param _size         Size of the ring (must be a power of 2)
+ * @param _mu           Name of MU to put the ring in (e.g. emem0)
+ */
+#define MEM_RING_INIT_MU(_name, _size, _mu) \
+    _NFP_CHIPRES_ASM(.alloc_resource _name##_rnum _mu##_queues global 1) \
+    _NFP_CHIPRES_ASM(.alloc_mem _name _mu global _size _size ) \
+    _NFP_CHIPRES_ASM(.init_mu_ring _name##_rnum _name)
+
+/*
+ * Declare+initialize a ring in a specific MU with a specific ring number
+ * @param _name         Name of the ring memory
+ * @param _size         Size of the ring (must be a power of 2)
+ * @param _mu           Name of MU to put the ring in (e.g. emem0)
+ * @param _rloc         Specific ring number to use for the ring
+ */
+#define MEM_RING_INIT_MURN(_name, _size, _mu, _rloc) \
+    _NFP_CHIPRES_ASM(.alloc_resource _name##_rnum _mu##_queues+_rloc global 1)\
+    _NFP_CHIPRES_ASM(.alloc_mem _name _mu global _size _size ) \
+    _NFP_CHIPRES_ASM(.init_mu_ring _name##_rnum _name)
+
+/*
+ * Declare+initialize a ring in a specific MU in cache_upper
+ * @param _name         Name of the ring memory
+ * @param _size         Size of the ring (must be a power of 2)
+ * @param _mu           Name of MU to put the ring in (e.g. emem0)
+ */
+#define MEM_RING_INIT_MUCU(_name, _size, _mu) \
+    _NFP_CHIPRES_ASM(.alloc_resource _name##_rnum _mu##_queues global 1) \
+    _NFP_CHIPRES_ASM(.alloc_mem _name _mu##_cache_upper global _size _size ) \
+    _NFP_CHIPRES_ASM(.init_mu_ring _name##_rnum _name)
+
+/*
+ * Declare+initialize a ring in a specific MU in cache_upper with a
+ * specific ring number.
+ * @param _name         Name of the ring memory
+ * @param _size         Size of the ring (must be a power of 2)
+ * @param _mu           Name of MU to put the ring in (e.g. emem0)
+ * @param _rloc         Specific ring number to use for the ring
+ */
+#define MEM_RING_INIT_MUCURN(_name, _size, _mu, _rloc) \
+    _NFP_CHIPRES_ASM(.alloc_resource _name##_rnum _mu##_queues+_rloc global 1)\
+    _NFP_CHIPRES_ASM(.alloc_mem _name _mu##_cache_upper global _size _size ) \
+    _NFP_CHIPRES_ASM(.init_mu_ring _name##_rnum _name)
+
+/*
+ * Declare+initialize a ring in emem0
+ * @param _name         Name of the ring memory
+ * @param _size         Size of the ring (must be a power of 2)
+ */
+#define MEM_RING_INIT(_name, _size) \
+    MEM_RING_INIT_MU(_name, _size, emem0)
+
+/*
+ * Declare+initialize a ring in emem0 with a specific ring number
+ * @param _name         Name of the ring memory
+ * @param _size         Size of the ring (must be a power of 2)
+ * @param _rnum         Specific ring number to use for the ring
+ */
+#define MEM_RING_INIT_RN(_name, _size, _rnum) \
+    MEM_RING_INIT_MURN(_name, _size, emem0, _rnum)
+
+/*
+ * Declare+initialize a ring in emem0 cache_upper
+ * @param _name         Name of the ring memory
+ * @param _size         Size of the ring (must be a power of 2)
+ */
+#define MEM_RING_INIT_CU(_name, _size) \
+    MEM_RING_INIT_MUCU(_name, _size, emem0)
+
+/*
+ * Declare+initialize a ring in emem0 cache_upper with a specific ring number
+ * @param _name         Name of the ring memory
+ * @param _size         Size of the ring (must be a power of 2)
+ * @param _rnum         Specific ring number to use for the ring
+ */
+#define MEM_RING_INIT_CURN(_name, _size, _rnum) \
+    MEM_RING_INIT_MUCNRN(_name, _size, emem0, _rnum)
+
+/* Macros to obtain ring information by its symbol name */
+#define MEM_RING_GET_NUM(_name)         MEM_RING_GET_NUM_BYSTR(#_name)
+#define MEM_RING_GET_NUM_BYSTR(_nstr)   __link_sym(_nstr "_rnum")
+#define MEM_RING_GET_MEMADDR(_name)     MEM_RING_GET_MEMADDR_BYSTR(#_name)
+#define MEM_RING_GET_MEMADDR_BYSTR(_nstr)   \
+    (((unsigned long long)__link_sym(_nstr) >> 8) & 0xFF000000)
+
+
+/* Debug journal helper macros */
+#define DBG_JOURNAL_DECLARE(_name)      MEM_RING_INIT(_name, 65536)
+
+/* Journal a single 32-bit word to debug journal '_jname' */
+#define JDBG(_name, _val)               \
+    mem_ring_journal_fast(              \
+            MEM_RING_GET_NUM(_name), MEM_RING_GET_MEMADDR(_name), (_val))
+
+/* Journal a value _x of type '_type' to debug journal '_name' */
+#define JDBG_TYPE(_name, _type, _x)     \
+    do {                                \
+        __xwrite _type __xtmp = (_x);   \
+        mem_ring_journal(               \
+            MEM_RING_GET_NUM(_name), MEM_RING_GET_MEMADDR(_name), \
+            &__xtmp, sizeof(__xtmp));   \
+    } while (0)
+
+
+/* Legacy macros for declaring & initializing MU rings */
 
 /**
  * High address bits use to specify target EMEM

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2012-2016,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -219,13 +219,15 @@ __cls_hash_mask_clr(__xwrite void *key, __cls void *mask, size_t size,
                     const size_t max_size, uint32_t idx, sync_t sync,
                     SIGNAL *sig)
 {
+    __cls void *temp_mask;
+
     ctassert(__is_write_reg(key));
     ctassert(__is_aligned(size, 2));
     ctassert(__is_aligned(max_size, 2));
 
     /* hash_index_select = addr[18:16]. See hash_mask_clear in databook */
-    mask = (__cls void *)((idx << 16) | (uint32_t)mask);
-    _CLS_CMD(hash_mask_clear, key, mask, size, max_size, sync, sig, 2, 8);
+    temp_mask = (__cls void *)((idx << 16) | (uint32_t)mask);
+    _CLS_CMD(hash_mask_clear, key, temp_mask, size, max_size, sync, sig, 2, 8);
 }
 
 __intrinsic void
@@ -241,13 +243,15 @@ __intrinsic void
 __cls_hash_mask(__xwrite void *key, __cls void *mask, size_t size,
                 const size_t max_size, uint32_t idx, sync_t sync, SIGNAL *sig)
 {
+    __cls void *temp_mask;
+
     ctassert(__is_write_reg(key));
     ctassert(__is_aligned(size, 2));
     ctassert(__is_aligned(max_size, 2));
 
     /* hash_index_select = addr[18:16] See hash_mask in databook*/
-    mask = (__cls void *)((idx << 16) | (uint32_t)mask);
-    _CLS_CMD(hash_mask, key, mask, size, max_size, sync, sig, 2, 8);
+    temp_mask = (__cls void *)((idx << 16) | (uint32_t)mask);
+    _CLS_CMD(hash_mask, key, temp_mask, size, max_size, sync, sig, 2, 8);
 }
 
 __intrinsic void

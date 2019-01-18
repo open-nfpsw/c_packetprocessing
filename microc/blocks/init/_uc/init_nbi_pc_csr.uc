@@ -31,7 +31,7 @@
  *                  produce a result for the lookup
  */
 #macro Nbi_PktPreclassifier_Characterization_PortCfg(NBI_ID,PORT,VALUE)
-    .init_csr xpb:Nbi/**/NBI_ID/**/IsldXpbMap.NbiTopXpbMap.PktPreclassifier.Characterization.PortCfg/**/PORT/**/ VALUE const
+    .init_csr xpb:Nbi/**/NBI_ID/**/IsldXpbMap.NbiTopXpbMap.PktPreclassifier.Characterization.PortCfg/**/PORT VALUE const
 #endm
 
 

@@ -1,5 +1,5 @@
-/*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+    /*
+ * Copyright 2012-2016 Netronome, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,9 +63,11 @@
 #include <assert.h>
 
 #include <net/eth.h>
+#include <net/icmp.h>
 #include <net/ip.h>
 #include <net/udp.h>
 #include <net/tcp.h>
+#include <net/sctp.h>
 
 /*
  * All header extract functions follow the same pattern.  They all
@@ -124,31 +126,59 @@
  * wants to skip them.
  */
 enum he_proto {
-    HE_NONE    = 0,      /**  0: No more headers, just data */
-    HE_ETHER,            /**  1: Ethernet header */
-    HE_8021Q,            /**  2: 802.1Q (VLAN) header */
-    HE_ARP,              /**  3: ARP header */
-    HE_IP4,              /**  4: IPv4 header */
-    HE_IP6,              /**  5: IPv6 header */
-    HE_TCP,              /**  6: TCP header */
-    HE_UDP,              /**  7: UDP header */
-    HE_GRE,              /**  8: GRE header */
-    HE_VXLAN,            /**  9: VXLAN header */
-    HE_ESP,              /** 10: ESP header */
+    HE_NONE =        0x0,   /**  0: No more headers, just data */
+    HE_ETHER,               /**  1: Ethernet header */
+    HE_8021Q,               /**  2: 802.1Q (VLAN) header */
+    HE_ARP,                 /**  3: ARP header */
+    HE_IP4,                 /**  4: IPv4 header */
+    HE_IP6,                 /**  5: IPv6 header */
+    HE_TCP,                 /**  6: TCP header */
+    HE_UDP,                 /**  7: UDP header */
+    HE_GRE,                 /**  8: GRE header */
+    HE_VXLAN,               /**  9: VXLAN header */
+    HE_ESP,                 /** 10: ESP header */
+    HE_MPLS,                /** 11: MPLS header */
+    HE_ICMP,                /** 12: ICMP/ICMPV6 header */
+    HE_SCTP,                /** 13: SCTP header */
+    HE_AH,                  /** 14: AH header */
 
-    HE_IP6_EXT =  0x100, /** IPv6 Extension header */
-    HE_IP6_HBH =  0x101, /** IPv6 Hop-by-Hop Options header */
-    HE_IP6_RT =   0x102, /** IPv6 Routing Extension header */
-    HE_IP6_FRAG = 0x103, /** IPv6 Fragmentation header */
-    HE_IP6_NONE = 0x104, /** IPv6 No Next Header header */
-    HE_IP6_DST =  0x105, /** IPv6 Destination Options header */
+    HE_IP6_EXT =     0x100, /** IPv6 Extension header */
+    HE_IP6_HBH =     0x101, /** IPv6 Hop-by-Hop Options header */
+    HE_IP6_RT =      0x102, /** IPv6 Routing Extension header */
+    HE_IP6_FRAG =    0x103, /** IPv6 Fragmentation header */
+    HE_IP6_NONE =    0x104, /** IPv6 No Next Header header */
+    HE_IP6_DST =     0x105, /** IPv6 Destination Options header */
+    HE_IP6_MOB =     0x106, /** IPv6 Mobility Extension header */
+    HE_IP6_HOST_ID = 0x107, /** IPv6 Host Identity Extension header */
+    HE_IP6_SHIM6 =   0x108, /** IPv6 Shim6 Extension header */
 
-    HE_UNKNOWN = 0xffff, /** Unknown/unhandled header */
+    HE_NON_PROTO =   0x8000, /** Start of non-proto return vals */
+
+    HE_ERROR =              0xe000, /** General error */
+    HE_ERROR_IP4_BAD_VER =  0xe001, /** Invalid IP version */
+    HE_ERROR_IP4_BAD_HL =   0xe002, /** Invalid header length */
+    HE_ERROR_IP4_BAD_TTL =  0xe003, /** Invalid TTL */
+
+    HE_ERROR_IP6_BAD_VER =          0xe010, /** Invalid IP version */
+    HE_ERROR_IP6_BAD_HOP_LIMIT =    0xe011, /** Invalid Hop Limit */
+
+    HE_UNKNOWN =     0xffff, /** Unknown/unhandled header */
+
+    /* MAX he_proto value is 16 bits */
 };
 
+#define HE_RESULT_IS_PROTO(res)         (((res) & 0x80000000) == 0)
+#define HE_RESULT_IS_ERROR(res)         (((res) >> 28) == 0xe)
+#define HE_RESULT_IS_UNKNOWN(res)       (((res) >> 28) == 0xf)
+#define HE_RESULT_IS_UNK_OR_ERR(res)    (((res) >> 29) == 0x7)
+
+#define HE_PROTO_IS_PROTO(proto)        (((proto) & 0x8000) == 0)
+#define HE_PROTO_IS_ERROR(proto)        (((proto) >> 12) == 0xe)
+#define HE_PROTO_IS_UNKNOWN(proto)      (((proto) >> 12) == 0xf)
+#define HE_PROTO_IS_UNK_OR_ERR(proto)   (((proto) >> 13) == 0x7)
 
 /**
- * Check if the a buffer of size @sz with current offset @off has
+ * Check if the buffer of size @sz with current offset @off has
  * enough space to contain a Ethernet header.
  */
 __intrinsic int he_eth_fit(sz, off);
@@ -164,12 +194,12 @@ __intrinsic int he_eth_fit(sz, off);
  * @dst must point to a struct eth_hdr or larger.
  * The length encoded in the return value is: sizeof(struct eth_hdr).
  * The next protocol encoded in the return value is one of HE_8021Q,
- * HE_IP4, HE_IP6, or HE_UNKNOWN.
+ * HE_IP4, HE_IP6, HE_MPLS or HE_UNKNOWN.
  */
 __intrinsic unsigned int he_eth(void *src_buf, int off, void *dst);
 
 /**
- * Check if the a buffer of size @sz with current offset @off has
+ * Check if the buffer of size @sz with current offset @off has
  * enough space to contain a 802.1Q (VLAN) header.
  */
 __intrinsic int he_vlan_fit(sz, off);
@@ -184,7 +214,7 @@ __intrinsic int he_vlan_fit(sz, off);
  * @dst must point to a struct vlan_hdr or larger.
  * The length encoded in the return value is: sizeof(struct vlan_hdr).
  * The next protocol encoded in the return value is one of HE_IP4,
- * HE_IP6, or HE_UNKNOWN.
+ * HE_IP6, HE_MPLS or HE_UNKNOWN.
  */
 __intrinsic unsigned int he_vlan(void *src_buf, int off, void *dst);
 
@@ -209,7 +239,7 @@ __intrinsic unsigned int he_arp(void *src_buf, int off, void *dst);
 
 
 /**
- * Check if the a buffer of size @sz with current offset @off has
+ * Check if the buffer of size @sz with current offset @off has
  * enough space to contain a IPv4 header.
  */
 __intrinsic int he_ip4_fit(sz, off);
@@ -234,7 +264,7 @@ __intrinsic unsigned int he_ip4(void *src_buf, int off, void *dst);
 
 
 /**
- * Check if the a buffer of size @sz with current offset @off has
+ * Check if the buffer of size @sz with current offset @off has
  * enough space to contain a IPv6 header.
  */
 __intrinsic int he_ip6_fit(sz, off);
@@ -254,32 +284,9 @@ __intrinsic int he_ip6_fit(sz, off);
  */
 __intrinsic unsigned int he_ip6(void *src_buf, int off, void *dst);
 
-/**
- * Check if the a buffer of size @sz with current offset @off has
- * enough space to parse enough of an IPv6 extension header to skip
- * it.
- */
-__intrinsic int he_ip6_ext_skip_fit(sz, off);
 
 /**
- * Parse an IPv6 extension header and skip it.
- * @param src_buf  Source buffer
- * @param off      Byte offset within @src_buf where the IPv6 header starts
- * @return         Length and next protocol header indication.
- *
- * This function allows to skip past the IPv6 extension headers if
- * they are of no interest. Instead of extracting the extension header
- * it simply returns the next protocol and the length.
- *
- * The next protocol encoded in the return value is one of HE_TCP,
- * HE_UDP, HE_IP6_HBH, HE_IP6_RT, HE_IP6_FRAG, HE_IP6_NONE,
- * HE_IP6_DST, or HE_UNKNOWN.
- */
-__intrinsic unsigned int he_ip6_ext_skip(void *src_buf, int off);
-
-
-/**
- * Check if the a buffer of size @sz with current offset @off has
+ * Check if the buffer of size @sz with current offset @off has
  * enough space to contain a TCP header.
  */
 __intrinsic int he_tcp_fit(sz, off);
@@ -299,7 +306,7 @@ __intrinsic unsigned int he_tcp(void *src_buf, int off, void *dst);
 
 
 /**
- * Check if the a buffer of size @sz with current offset @off has
+ * Check if the buffer of size @sz with current offset @off has
  * enough space to contain a UDP header.
  */
 __intrinsic int he_udp_fit(sz, off);
@@ -339,7 +346,7 @@ __intrinsic int he_gre_fit(sz, off);
  *
  * @dst must point to a struct gre_hdr or larger.
  * The next protocol encoded in the return value is one of HE_ETHER or
- * HE_IP4, HE_IP6, or HE_UNKNOWN.
+ * HE_IP4, HE_IP6, HE_MPLS or HE_UNKNOWN.
  * The length encoded in the return value is the complete GRE header.
  * Note this function only extracts the mandatory struct gre_hdr. Those
  * interested in the optional header fields should either use one of the
@@ -376,5 +383,103 @@ __intrinsic int he_vxlan_fit(sz, off);
  * The length encoded in the return value is: sizeof(struct vxlan_hdr)
  */
 __intrinsic unsigned int he_vxlan(void *src_buf, int off, void *dst);
+
+
+/**
+ * Check if a buffer of size @sz with current offset @off has
+ * enough space to contain a MPLS header.
+ */
+__intrinsic int he_mpls_fit(sz, off);
+
+/**
+ * Extract a MPLS header starting from an offset in the buffer.
+ * @param src_buf  Source buffer
+ * @param off      Byte offset within @src_buf where the MPLS header starts
+ * @param dst      Pointer to buffer in to which to return the extracted header
+ * @return         Length and next protocol header indication.
+ *
+ * @dst must point to a struct mpls_hdr or larger.
+ * The next protocol encoded in the return value is HE_NONE
+ * The length encoded in the return value is: sizeof(struct mpls_hdr)
+ */
+__intrinsic unsigned int he_mpls(void *src_buf, int off, void *dst);
+
+
+/**
+ * Check if the buffer of size @sz with current offset @off has
+ * enough space to contain a SCTP header.
+ */
+__intrinsic int he_sctp_fit(sz, off);
+
+/**
+ * Extract an SCTP header starting from an offset in the buffer.
+ * @param src_buf  Source buffer
+ * @param off      Byte offset within the @src_buf where the SCTP
+ *                 header starts
+ * @param dst      Pointer to buffer in to which to return the extracted header
+ * @return         Length and next protocol header indication.
+ *
+ * @dst must point to a struct sctp_hdr or larger.
+ * The length encoded in the return value is: sizeof(struct sctp_hdr).
+ */
+__intrinsic unsigned int he_sctp(void *src_buf, int off, void *dst);
+
+
+/**
+ * Check if the buffer of size @sz with current offset @off has
+ * enough space to contain a ICMP or ICMPv6 header.
+ */
+__intrinsic int he_icmp_fit(sz, off);
+
+/**
+ * Extract an ICMP or ICMPv6 header starting from an offset in the buffer.
+ * @param src_buf  Source buffer
+ * @param off      Byte offset within the @src_buf where the ICMP
+ *                 header starts
+ * @param dst      Pointer to buffer in to which to return the extracted header
+ * @return         Length and next protocol header indication.
+ *
+ * @dst must point to a struct icmp_hdr or larger.
+ * The length encoded in the return value is: sizeof(struct icmp_hdr).
+ */
+__intrinsic unsigned int he_icmp(void *src_buf, int off, void *dst);
+
+/**
+ * Check if the buffer of size @sz with current offset @off has
+ * enough space to contain a ESP header.
+ */
+__intrinsic int he_esp_fit(sz, off);
+
+/**
+ * Extract an ESP header starting from an offset in the buffer.
+ * @param src_buf  Source buffer
+ * @param off      Byte offset within the @src_buf where the ESP
+ *                 header starts
+ * @param dst      Pointer to buffer in to which to return the extracted header
+ * @return         Length and next protocol header indication.
+ *
+ * @dst must point to a struct esp_hdr or larger.
+ * The length encoded in the return value is: sizeof(struct esp_hdr).
+ */
+__intrinsic unsigned int he_esp(void *src_buf, int off, void *dst);
+
+/**
+ * Check if the buffer of size @sz with current offset @off has
+ * enough space to contain a AH header.
+ */
+__intrinsic int he_ah_fit(sz, off);
+
+/**
+ * Extract an AH header starting from an offset in the buffer.
+ * @param src_buf  Source buffer
+ * @param off      Byte offset within the @src_buf where the AH
+ *                 header starts
+ * @param dst      Pointer to buffer in to which to return the extracted header
+ * @return         Length and next protocol header indication.
+ *
+ * @dst must point to a struct ah_hdr or larger.
+ * The length encoded in the return value is: sizeof(struct ah_hdr).
+ */
+__intrinsic unsigned int he_ah(void *src_buf, int off, void *dst);
 
 #endif /* _HDR_EXT_H_ */

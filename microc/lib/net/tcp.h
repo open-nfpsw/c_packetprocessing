@@ -30,6 +30,16 @@
 #define NET_TCP_LEN              20
 #define NET_TCP_LEN32            (NET_TCP_LEN / 4)
 
+/* TCP flag defines */
+#define NET_TCP_FLAG_FIN (1 << 0)  /* Finished */
+#define NET_TCP_FLAG_SYN (1 << 1)  /* Synchronize */
+#define NET_TCP_FLAG_RST (1 << 2)  /* Reset */
+#define NET_TCP_FLAG_PSH (1 << 3)  /* Push */
+#define NET_TCP_FLAG_ACK (1 << 4)  /* Acknowledgment */
+#define NET_TCP_FLAG_URG (1 << 5)  /* Urgent */
+#define NET_TCP_FLAG_ECE (1 << 6)  /* ECN-Echo */
+#define NET_TCP_FLAG_CWR (1 << 7)  /* Congestion Window Reduced */
+
 #if defined(__NFP_LANG_MICROC)
 
 #include <nfp.h>

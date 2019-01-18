@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2014-2017,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,8 +66,18 @@
 #ifndef SPLIT_LENGTH
     #error "SPLIT_LENGTH is not defined"
 #endif
+
+/* NBI DMA settings for C0 */
+#if (__REVISION_MIN >= __REVISION_C0)
+
+/* FIXME: C0 */
+#error "C0 not implemented by NBI DMA init."
+
+/* NBI DMA settings for A0-B0 */
+#elif (__REVISION_MAX <= __REVISION_B0)
+
 #if ( (PKT_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND0) + \
-      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND0)) > 512)
+      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND0)) > 256)
     #error "ME Island0's CTM Packet credits are not allocated appropriately"
 #endif
 #if ( (BUF_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND0) + \
@@ -75,52 +85,60 @@
     #error "ME Island0's CTM Buffer credits are not allocated appropriately"
 #endif
 #if ( (PKT_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND1) + \
-      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND1)) > 512)
-    #error "ME Island0's CTM Packet credits are not allocated appropriately"
+      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND1)) > 256)
+    #error "ME Island1's CTM Packet credits are not allocated appropriately"
 #endif
 #if ( (BUF_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND1) + \
       BUF_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND1)) > 128)
-    #error "ME Island0's CTM Buffer credits are not allocated appropriately"
+    #error "ME Island1's CTM Buffer credits are not allocated appropriately"
 #endif
 #if ( (PKT_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND2) + \
-      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND2)) > 512)
-    #error "ME Island0's CTM Packet credits are not allocated appropriately"
+      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND2)) > 256)
+    #error "ME Island2's CTM Packet credits are not allocated appropriately"
 #endif
 #if ( (BUF_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND2) + \
       BUF_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND2)) > 128)
-    #error "ME Island0's CTM Buffer credits are not allocated appropriately"
+    #error "ME Island2's CTM Buffer credits are not allocated appropriately"
 #endif
 #if ( (PKT_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND3) + \
-      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND3)) > 512)
-    #error "ME Island0's CTM Packet credits are not allocated appropriately"
+      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND3)) > 256)
+    #error "ME Island3's CTM Packet credits are not allocated appropriately"
 #endif
 #if ( (BUF_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND3) + \
       BUF_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND3)) > 128)
-    #error "ME Island0's CTM Buffer credits are not allocated appropriately"
+    #error "ME Island3's CTM Buffer credits are not allocated appropriately"
 #endif
 #if ( (PKT_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND4) + \
-      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND4)) > 512)
-    #error "ME Island0's CTM Packet credits are not allocated appropriately"
+      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND4)) > 256)
+    #error "ME Island4's CTM Packet credits are not allocated appropriately"
 #endif
 #if ( (BUF_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND4) + \
       BUF_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND4)) > 128)
-    #error "ME Island0's CTM Buffer credits are not allocated appropriately"
+    #error "ME Island4's CTM Buffer credits are not allocated appropriately"
 #endif
 #if ( (PKT_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND5) + \
-      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND5)) > 512)
-    #error "ME Island0's CTM Packet credits are not allocated appropriately"
+      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND5)) > 256)
+    #error "ME Island5's CTM Packet credits are not allocated appropriately"
 #endif
 #if ( (BUF_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND5) + \
       BUF_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND5)) > 128)
-    #error "ME Island0's CTM Buffer credits are not allocated appropriately"
+    #error "ME Island5's CTM Buffer credits are not allocated appropriately"
 #endif
 #if ( (PKT_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND6) + \
-      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND6)) > 512)
-    #error "ME Island0's CTM Packet credits are not allocated appropriately"
+      PKT_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND6)) > 256)
+    #error "ME Island6's CTM Packet credits are not allocated appropriately"
 #endif
 #if ( (BUF_CREDIT_VAL(NBI0_DMA_BPE_CONFIG_ME_ISLAND6) + \
       BUF_CREDIT_VAL(NBI1_DMA_BPE_CONFIG_ME_ISLAND6)) > 128)
-    #error "ME Island0's CTM Buffer credits are not allocated appropriately"
+    #error "ME Island6's CTM Buffer credits are not allocated appropriately"
+#endif
+
+/* NBI DMA settings for mixed A0-B0 and C0 */
+#else
+
+/* FIXME: C0 */
+#error "Mixed A0-B0 and C0 not implemented by NBI DMA init."
+
 #endif
 
 /* A helper macro to populate the NBI DMA BPE credit symbol */
@@ -179,8 +197,8 @@
         SPLIT_LENGTH,
         BLQ_SECONDARY(NBI_DMA_BP0_BLQ_TARGET),
         BLQ_PRIMARY(NBI_DMA_BP0_BLQ_TARGET),
-        1,  //CtmOffset = 64B
-        NBI_DMA_BP_DROP_ENABLE
+        CTM_OFFSET,
+        NBI_DMA_BP0_DROP_ENABLE
     )
     /* Buffer Pool 1: Packets <= 1984B */
     NbiDmaXpb_NbiDmaCsr_NbiDmaBPCfg(NBI_ID,
@@ -189,8 +207,8 @@
         SPLIT_LENGTH,
         BLQ_SECONDARY(NBI_DMA_BP1_BLQ_TARGET),
         BLQ_PRIMARY(NBI_DMA_BP1_BLQ_TARGET),
-        1,  //CtmOffset = 64B
-        NBI_DMA_BP_DROP_ENABLE
+        CTM_OFFSET,
+        NBI_DMA_BP1_DROP_ENABLE
     )
     /* Buffer Pool 2: Packets > 1984B */
     NbiDmaXpb_NbiDmaCsr_NbiDmaBPCfg(NBI_ID,
@@ -199,8 +217,8 @@
         SPLIT_LENGTH,
         BLQ_SECONDARY(NBI_DMA_BP2_BLQ_TARGET),
         BLQ_PRIMARY(NBI_DMA_BP2_BLQ_TARGET),
-        1,  //CtmOffset = 64B
-        NBI_DMA_BP_DROP_ENABLE
+        CTM_OFFSET,
+        NBI_DMA_BP2_DROP_ENABLE
     )
     /* Buffer Pool 3: Exceptiond Packets <= 192B */
     NbiDmaXpb_NbiDmaCsr_NbiDmaBPCfg(NBI_ID,
@@ -209,8 +227,8 @@
         SPLIT_LENGTH,
         BLQ_SECONDARY(NBI_DMA_BP3_BLQ_TARGET),
         BLQ_PRIMARY(NBI_DMA_BP3_BLQ_TARGET),
-        1,  //CtmOffset = 64B
-        NBI_DMA_BP_DROP_ENABLE
+        CTM_OFFSET,
+        NBI_DMA_BP3_DROP_ENABLE
     )
     /* Buffer Pool 4: Exceptiond Packets <= 1984B */
     NbiDmaXpb_NbiDmaCsr_NbiDmaBPCfg(NBI_ID,
@@ -219,8 +237,8 @@
         SPLIT_LENGTH,
         BLQ_SECONDARY(NBI_DMA_BP4_BLQ_TARGET),
         BLQ_PRIMARY(NBI_DMA_BP4_BLQ_TARGET),
-        1,  //CtmOffset = 64B
-        NBI_DMA_BP_DROP_ENABLE
+        CTM_OFFSET,
+        NBI_DMA_BP4_DROP_ENABLE
     )
     /* Buffer Pool 5: Exceptiond Packets > 1984B */
     NbiDmaXpb_NbiDmaCsr_NbiDmaBPCfg(NBI_ID,
@@ -229,8 +247,8 @@
         SPLIT_LENGTH,
         BLQ_SECONDARY(NBI_DMA_BP5_BLQ_TARGET),
         BLQ_PRIMARY(NBI_DMA_BP5_BLQ_TARGET),
-        1,  //CtmOffset = 64B
-        NBI_DMA_BP_DROP_ENABLE
+        CTM_OFFSET,
+        NBI_DMA_BP5_DROP_ENABLE
     )
     /* Buffer Pool 6: Unused */
     NbiDmaXpb_NbiDmaCsr_NbiDmaBPCfg(NBI_ID,
@@ -239,8 +257,8 @@
         SPLIT_LENGTH,
         BLQ_SECONDARY(NBI_DMA_BP6_BLQ_TARGET),
         BLQ_PRIMARY(NBI_DMA_BP6_BLQ_TARGET),
-        1,  //CtmOffset = 64B
-        NBI_DMA_BP_DROP_ENABLE
+        CTM_OFFSET,
+        NBI_DMA_BP6_DROP_ENABLE
     )
 
     #define NBI_DMA_BPE_NUM 32
@@ -470,8 +488,8 @@
         SPLIT_LENGTH,
         BLQ_SECONDARY(NBI_DMA_BP7_BLQ_TARGET),
         BLQ_PRIMARY(NBI_DMA_BP7_BLQ_TARGET),
-        1,  //CtmOffset = 64B
-        NBI_DMA_BP_DROP_ENABLE
+        CTM_OFFSET,
+        NBI_DMA_BP7_DROP_ENABLE
     )
 
     #undef NBI_DMA_LOOP

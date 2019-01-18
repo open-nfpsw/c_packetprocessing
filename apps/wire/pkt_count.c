@@ -63,13 +63,34 @@ struct pkt_hdr {
     };
 };
 
+/**
+ * Check if a Ethernet address is a unicast address.
+ */
+#define NET_ETH_IS_UC_ADDR(_a) \
+    ((((struct eth_addr *)_a)->a[0] & NET_ETH_GROUP_ADDR) == 0)
+
+/**
+ * Check if a Ethernet address is a broadcast address.
+ */
+#define NET_ETH_IS_BC_ADDR(_a) \
+    (((uint16_t *)_a)[0] == 0xFFFF && \
+     ((uint16_t *)_a)[1] == 0xFFFF && \
+     ((uint16_t *)_a)[2] == 0xFFFF)
+
+/**
+ * Check if a Ethernet address is a multicast address.
+ */
+#define NET_ETH_IS_MC_ADDR(_a) \
+    (((struct eth_addr *)_a)->a[0] & NET_ETH_GROUP_ADDR)
+
+
 
 /*
  * Classify and count packets received
  */
 __intrinsic void
-pkt_count_rx(__mem char *buf_addr, __gpr uint32_t buf_off,
-             __mem struct pkt_cnt_if *cntrs)
+pkt_count_rx(__mem40 char *buf_addr, __gpr uint32_t buf_off,
+             __mem40 struct pkt_cnt_if *cntrs)
 {
     __xread uint32_t pkt_buf[16];
     __lmem uint32_t src_buf[16];

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2012-2016,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,20 +38,26 @@
 /**
  * An incomplete list of IP protocol numbers
  * See: http://en.wikipedia.org/wiki/List_of_IP_protocol_numbers
+ * See: http://www.iana.org/assignments/ipv6-parameters/ipv6-parameters.xhtml
  */
-#define NET_IP_PROTO_HOPOPT     0x00    /** IPv6 Hop-by-Hop Option */
-#define NET_IP_PROTO_ICMP       0x01    /** Internet Control Message Protocol */
-#define NET_IP_PROTO_IPV4       0x04    /** IPv4 (encapsulation)*/
-#define NET_IP_PROTO_TCP        0x06    /** Transmission Control Protocol */
-#define NET_IP_PROTO_UDP        0x11    /** User Datagram Protocol */
-#define NET_IP_PROTO_IPV6       0x29    /** IPv6 (encapsulation) */
-#define NET_IP_PROTO_ROUTING    0x2b    /** Routing Header for IPv6 */
-#define NET_IP_PROTO_FRAG       0x2c    /** Fragment Header for IPv6 */
-#define NET_IP_PROTO_GRE        0x2f    /** Generic Routing Encapsulation */
-#define NET_IP_PROTO_ESP        0x32    /** Encapsulating Security Payload */
-#define NET_IP_PROTO_ICMPV6     0x3a    /** ICMP for IPv6 */
-#define NET_IP_PROTO_NONE       0x3b    /** No Next Header for IPv6 */
-#define NET_IP_PROTO_DSTOPTS    0x3c    /** Destination Options for IPv6 */
+#define NET_IP_PROTO_HOPOPT   0x00 /** IPv6 Hop-by-Hop Option ext header*/
+#define NET_IP_PROTO_ICMP     0x01 /** Internet Control Message Protocol */
+#define NET_IP_PROTO_IPV4     0x04 /** IPv4 (encapsulation)*/
+#define NET_IP_PROTO_TCP      0x06 /** Transmission Control Protocol */
+#define NET_IP_PROTO_UDP      0x11 /** User Datagram Protocol */
+#define NET_IP_PROTO_IPV6     0x29 /** IPv6 (encapsulation) */
+#define NET_IP_PROTO_ROUTING  0x2b /** Routing Header for IPv6 ext header */
+#define NET_IP_PROTO_FRAG     0x2c /** Fragment Header for IPv6 ext header*/
+#define NET_IP_PROTO_GRE      0x2f /** Generic Routing Encapsulation */
+#define NET_IP_PROTO_ESP      0x32 /** Encapsulating Security Payload */
+#define NET_IP_PROTO_AH       0x33 /** Authentication Header */
+#define NET_IP_PROTO_ICMPV6   0x3a /** ICMP for IPv6 */
+#define NET_IP_PROTO_NONE     0x3b /** No Next Header for IPv6 */
+#define NET_IP_PROTO_DSTOPTS  0x3c /** Destination Options IPv6 ext header*/
+#define NET_IP_PROTO_SCTP     0x84 /** Stream Control Transmission Protocol */
+#define NET_IP_PROTO_MOBILITY 0x87 /** Mobility Header for IPv6 */
+#define NET_IP_PROTO_HOST_ID  0x8b /** Host Identity Prot IPv6 ext header*/
+#define NET_IP_PROTO_SHIM6    0x8c /** Shim6 Protocol for IPv6 ext header */
 
 
 /**
@@ -61,7 +67,26 @@
 #define NET_IP_FLAGS_CE      0x8000     /** Congestion */
 #define NET_IP_FLAGS_DF      0x4000     /** Don't fragment flag  */
 #define NET_IP_FLAGS_MF      0x2000     /** More fragments flag  */
+/* Convenience macro to determine if packet is fragmented */
+#define NET_IP_IS_FRAG(_frag) \
+    (_frag & (NET_IP_FRAG_OFF_MASK | NET_IP_FLAGS_MF))
 
+
+#define NET_IP_MCAST_ADDR      0xE0000000
+#define NET_IP_MCAST_ADDR_MASK 0xF0000000
+#define NET_IP_BCAST_ADDR      0xFFFFFFFF
+/* Convenience macro determine if IPv4 address is link-local Broadcast */
+#define NET_IP_IS_BCAST(_addr) (_addr == NET_IP_BCAST_ADDR)
+/* Convenience macro determine if IPv4 address is Multicast */
+#define NET_IP_IS_MCAST(_addr) \
+    ((_addr & NET_IP_MCAST_ADDR_MASK) == NET_IP_MCAST_ADDR)
+/* Convenience macro determine if destination IPv4 address is
+ * link-local Broadcast or Multicast */
+#define NET_IP_IS_BMCAST(_addr) \
+    (NET_IP_IS_MCAST(_addr) || NET_IP_IS_BCAST(_addr))
+
+
+#define NET_IP6_MCAST_ADDR      0xFF
 
 #if defined(__NFP_LANG_MICROC)
 
@@ -170,6 +195,28 @@ __packed struct ip6_dst {
     uint32_t opt_or_pad1;               /** Options or padding */
     /* Potentially followed by more options */
 };
+
+/**
+ * Check if IPv6 address is Multicast
+ *
+ * @param a     pointer for buffer containing IPv6 address to be evaluated
+ *
+ * @return      True or False
+ */
+__intrinsic static int
+net_ipv6_is_mc_addr(void *a)
+{
+    int is_mc_addr;
+    ctassert(__is_in_reg_or_lmem(a));
+    if (__is_in_lmem(a)) {
+        is_mc_addr = (((__lmem struct in6_addr *)a)->s6_addr[0] ==
+                      NET_IP6_MCAST_ADDR);
+    } else {
+        is_mc_addr = (((__gpr struct in6_addr *)a)->s6_addr[0] ==
+                      NET_IP6_MCAST_ADDR);
+    }
+    return is_mc_addr;
+}
 
 #endif /* __NFP_LANG_MICROC */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2012-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,11 +37,12 @@
  * @note @ctm_addr must be a real address not a packet mode address.
  */
 __intrinsic void
-__mem_pe_dma_mu_to_ctm(__ctm void *ctm_addr, __mem void *mem_addr,
+__mem_pe_dma_mu_to_ctm(__ctm40 void *ctm_addr, __mem40 void *mem_addr,
                        size_t size, sync_t sync, SIGNAL *sig);
 
 __intrinsic void
-mem_pe_dma_mu_to_ctm(__ctm void *ctm_addr, __mem void *mem_addr, size_t size);
+mem_pe_dma_mu_to_ctm(__ctm40 void *ctm_addr, __mem40 void *mem_addr,
+                     size_t size);
 
 /**
  * DMA from CTM to MU.
@@ -58,10 +59,11 @@ mem_pe_dma_mu_to_ctm(__ctm void *ctm_addr, __mem void *mem_addr, size_t size);
  * @note @ctm_addr must be a real address not a packet mode address.
  */
 __intrinsic void
-__mem_pe_dma_ctm_to_mu(__mem void *mem_addr, __ctm void *ctm_addr,
+__mem_pe_dma_ctm_to_mu(__mem40 void *mem_addr, __ctm40 void *ctm_addr,
                        size_t size, sync_t sync, SIGNAL *sig);
 
 __intrinsic void
-mem_pe_dma_ctm_to_mu(__mem void *mem_addr, __ctm void *ctm_addr, size_t size);
+mem_pe_dma_ctm_to_mu(__mem40 void *mem_addr, __ctm40 void *ctm_addr,
+                     size_t size);
 
 #endif /* !_NFP__MEM_BULK_H_ */

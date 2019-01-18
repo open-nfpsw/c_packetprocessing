@@ -55,8 +55,8 @@ struct pkt_cnt_if {
  * test code for the header extract.
  */
 
-__intrinsic void pkt_count_rx(__mem char *buf_addr, __gpr uint32_t buf_off,
-                              __mem struct pkt_cnt_if *cntrs);
+__intrinsic void pkt_count_rx(__mem40 char *buf_addr, __gpr uint32_t buf_off,
+                              __mem40 struct pkt_cnt_if *cntrs);
 
 
 #endif /* _PKT_COUNT_H_ */

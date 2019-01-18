@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright 2012-2016 Netronome, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,13 @@
 #include "arp.h"
 #include "eth.h"
 #include "hdr_ext.h"
+#include "icmp.h"
 #include "ip.h"
+#include "sctp.h"
 #include "tcp.h"
 #include "udp.h"
+#include "esp.h"
+#include "ah.h"
 #include "vxlan.h"
 
 /*
@@ -75,6 +79,195 @@
  * failed.
  */
 
+/* Note that you can selectively omit protocols from being detected by
+ * adding the OMIT_NET_XXX to your active #defines when compiling this
+ * library. By omitting protocols you can also save on code store and control
+ * looking for protocols that you wish to not process. All omitted protocol
+ * when not found will return as HE_UNKNOWN.
+ */
+
+/* ------- Ethertype header extract switch statements -------- */
+
+/* IPv4 */
+#ifndef OMIT_NET_ETH_TYPE_IPV4
+#define CASE_NET_ETH_TYPE_IPV4 \
+    case NET_ETH_TYPE_IPV4: next_proto = HE_IP4; break;
+#else
+#define CASE_NET_ETH_TYPE_IPV4
+#endif
+
+/* VLAN tags */
+#ifndef OMIT_NET_ETH_TYPE_TPID
+#define CASE_NET_ETH_TYPE_TPID \
+    case NET_ETH_TYPE_TPID: next_proto = HE_8021Q; break;
+#else
+#define CASE_NET_ETH_TYPE_TPID
+#endif
+
+/* IPv6 tags */
+#ifndef OMIT_NET_ETH_TYPE_IPV6
+#define CASE_NET_ETH_TYPE_IPV6 \
+    case NET_ETH_TYPE_IPV6: next_proto = HE_IP6; break;
+#else
+#define CASE_NET_ETH_TYPE_IPV6
+#endif
+
+/* ARP */
+#ifndef OMIT_NET_ETH_TYPE_ARP
+#define CASE_NET_ETH_TYPE_ARP \
+    case NET_ETH_TYPE_ARP: next_proto = HE_ARP; break;
+#else
+#define CASE_NET_ETH_TYPE_ARP
+#endif
+
+/* MPLS */
+#ifndef OMIT_NET_ETH_TYPE_MPLS
+#define CASE_NET_ETH_TYPE_MPLS \
+    case NET_ETH_TYPE_MPLS: next_proto = HE_MPLS; break;
+#else
+#define CASE_NET_ETH_TYPE_MPLS
+#endif
+
+/* Transparent Ethernet Bridging */
+#ifndef OMIT_NET_ETH_TYPE_TEB
+#define CASE_NET_ETH_TYPE_TEB \
+    case NET_ETH_TYPE_TEB: next_proto = HE_ETHER; break;
+#else
+#define CASE_NET_ETH_TYPE_TEB
+#endif
+
+
+/* ------- IP / IPv6 header extract switch statements -------- */
+
+/* ICMP */
+#ifndef OMIT_NET_IP_PROTO_ICMP
+#define CASE_NET_IP_PROTO_ICMP \
+    case NET_IP_PROTO_ICMP: next_proto = HE_ICMP; break;
+#else
+#define CASE_NET_IP_PROTO_ICMP
+#endif
+
+/* TCP */
+#ifndef OMIT_NET_IP_PROTO_TCP
+#define CASE_NET_IP_PROTO_TCP \
+    case NET_IP_PROTO_TCP: next_proto = HE_TCP; break;
+#else
+#define CASE_NET_IP_PROTO_TCP
+#endif
+
+/* UDP */
+#ifndef OMIT_NET_IP_PROTO_UDP
+#define CASE_NET_IP_PROTO_UDP \
+    case NET_IP_PROTO_UDP: next_proto = HE_UDP; break;
+#else
+#define CASE_NET_IP_PROTO_UDP
+#endif
+
+/* GRE */
+#ifndef OMIT_NET_IP_PROTO_GRE
+#define CASE_NET_IP_PROTO_GRE \
+    case NET_IP_PROTO_GRE: next_proto = HE_GRE; break;
+#else
+#define CASE_NET_IP_PROTO_GRE
+#endif
+
+/* ESP */
+#ifndef OMIT_NET_IP_PROTO_ESP
+#define CASE_NET_IP_PROTO_ESP \
+    case NET_IP_PROTO_ESP: next_proto = HE_ESP; break;
+#else
+#define CASE_NET_IP_PROTO_ESP
+#endif
+
+/* Authentication header */
+#ifndef OMIT_NET_IP_PROTO_AH
+#define CASE_NET_IP_PROTO_AH \
+    case NET_IP_PROTO_AH: next_proto = HE_AH; break;
+#else
+#define CASE_NET_IP_PROTO_AH
+#endif
+
+/* ICMPv6 */
+#ifndef OMIT_NET_IP_PROTO_ICMPV6
+#define CASE_NET_IP_PROTO_ICMPV6 \
+    case NET_IP_PROTO_ICMPV6: next_proto = HE_ICMP; break;
+#else
+#define CASE_NET_IP_PROTO_ICMPV6
+#endif
+
+/* SCTP */
+#ifndef OMIT_NET_IP_PROTO_SCTP
+#define CASE_NET_IP_PROTO_SCTP \
+    case NET_IP_PROTO_SCTP: next_proto = HE_SCTP; break;
+#else
+#define CASE_NET_IP_PROTO_SCTP
+#endif
+
+/* IPv6 Extension header types */
+/* IPv6 Hop-by-hop option */
+#ifndef OMIT_NET_IP_PROTO_HOPOPT
+#define CASE_NET_IP_PROTO_HOPOPT \
+    case NET_IP_PROTO_HOPOPT: next_proto = HE_IP6_HBH; break;
+#else
+#define CASE_NET_IP_PROTO_HOPOPT
+#endif
+
+/* IPv6 Routing option */
+#ifndef OMIT_NET_IP_PROTO_ROUTING
+#define CASE_NET_IP_PROTO_ROUTING \
+    case NET_IP_PROTO_ROUTING: next_proto = HE_IP6_RT; break;
+#else
+#define CASE_NET_IP_PROTO_ROUTING
+#endif
+
+/* IPv6 Fragment header */
+#ifndef OMIT_NET_IP_PROTO_FRAG
+#define CASE_NET_IP_PROTO_FRAG \
+    case NET_IP_PROTO_FRAG: next_proto = HE_IP6_FRAG; break;
+#else
+#define CASE_NET_IP_PROTO_FRAG
+#endif
+
+/* IP proto 'none' */
+#ifndef OMIT_NET_IP_PROTO_NONE
+#define CASE_NET_IP_PROTO_NONE \
+    case NET_IP_PROTO_NONE: next_proto = HE_NONE; break;
+#else
+#define CASE_NET_IP_PROTO_NONE
+#endif
+
+/* IPv6 Destination options */
+#ifndef OMIT_NET_IP_PROTO_DSTOPTS
+#define CASE_NET_IP_PROTO_DSTOPTS \
+    case NET_IP_PROTO_DSTOPTS: next_proto = HE_IP6_DST; break;
+#else
+#define CASE_NET_IP_PROTO_DSTOPTS
+#endif
+
+/* IPv6 Mobility header */
+#ifndef OMIT_NET_IP_PROTO_MOBILITY
+#define CASE_NET_IP_PROTO_MOBILITY \
+    case NET_IP_PROTO_MOBILITY: next_proto = HE_IP6_MOB; break;
+#else
+#define CASE_NET_IP_PROTO_MOBILITY
+#endif
+
+/* IPv6 Host Identification header */
+#ifndef OMIT_NET_IP_PROTO_HOST_ID
+#define CASE_NET_IP_PROTO_HOST_ID \
+    case NET_IP_PROTO_HOST_ID: next_proto = HE_IP6_HOST_ID; break;
+#else
+#define CASE_NET_IP_PROTO_HOST_ID
+#endif
+
+/* IPv6 Shim6 header */
+#ifndef OMIT_NET_IP_PROTO_SHIM6
+#define CASE_NET_IP_PROTO_SHIM6 \
+    case NET_IP_PROTO_SHIM6: next_proto = HE_IP6_SHIM6; break;
+#else
+#define CASE_NET_IP_PROTO_SHIM6
+#endif
+
 __intrinsic int
 he_eth_fit(sz, off)
 {
@@ -86,10 +279,11 @@ he_eth_fit(sz, off)
     *dst =  *(__lmem struct eth_hdr *)(((__lmem char *)src_buf) + off); \
                                                                         \
     switch(dst->type) {                                                 \
-    case NET_ETH_TYPE_IPV4: next_proto = HE_IP4; break;                 \
-    case NET_ETH_TYPE_TPID: next_proto = HE_8021Q; break;               \
-    case NET_ETH_TYPE_IPV6: next_proto = HE_IP6; break;                 \
-    case NET_ETH_TYPE_ARP: next_proto = HE_ARP; break;                  \
+    CASE_NET_ETH_TYPE_IPV4                                              \
+    CASE_NET_ETH_TYPE_TPID                                              \
+    CASE_NET_ETH_TYPE_IPV6                                              \
+    CASE_NET_ETH_TYPE_ARP                                               \
+    CASE_NET_ETH_TYPE_MPLS                                              \
     default: next_proto = HE_UNKNOWN;                                   \
     }
 
@@ -128,8 +322,9 @@ he_vlan_fit(sz, off)
 #define HE_VLAN_FUNC(dst)                                               \
     *dst = *(__lmem struct vlan_hdr *)(((__lmem char *)src_buf) + off); \
     switch(dst->type) {                                                 \
-    case NET_ETH_TYPE_IPV4: next_proto = HE_IP4; break;                 \
-    case NET_ETH_TYPE_IPV6: next_proto = HE_IP6; break;                 \
+    CASE_NET_ETH_TYPE_IPV4                                              \
+    CASE_NET_ETH_TYPE_IPV6                                              \
+    CASE_NET_ETH_TYPE_MPLS                                              \
     default: next_proto = HE_UNKNOWN;                                   \
     }
 
@@ -169,9 +364,6 @@ he_arp_fit(sz, off)
 __intrinsic unsigned int
 he_arp(void *src_buf, int off, void *dst)
 {
-    __gpr unsigned int next_proto;
-    __gpr int ret;
-
     ctassert(__is_in_lmem(src_buf));
     ctassert(__is_in_reg_or_lmem(dst));
 
@@ -194,16 +386,33 @@ he_ip4_fit(sz, off)
     return (off + sizeof(struct ip4_hdr)) <= sz;
 }
 
+#ifdef ADD_NET_IP4_CHECK
+#define HE_IP4_CHECK(_dst)                                              \
+    if (_dst->ver != 4)                                                 \
+        next_proto = HE_ERROR_IP4_BAD_VER;                              \
+    if (_dst->hl < 5)                                                   \
+        next_proto = HE_ERROR_IP4_BAD_HL;                               \
+    if (_dst->ttl <= 1)                                                 \
+        next_proto = HE_ERROR_IP4_BAD_TTL;
+#else
+#define HE_IP4_CHECK(_dst)
+#endif
+
 #define HE_IP4_FUNC(dst)                                                \
     *dst = *(__lmem struct ip4_hdr *)(((__lmem char *)src_buf) + off);  \
                                                                         \
     switch(dst->proto) {                                                \
-    case NET_IP_PROTO_TCP: next_proto = HE_TCP; break;                  \
-    case NET_IP_PROTO_UDP: next_proto = HE_UDP; break;                  \
-    case NET_IP_PROTO_GRE: next_proto = HE_GRE; break;                  \
-    case NET_IP_PROTO_ESP: next_proto = HE_ESP; break;                  \
+    CASE_NET_IP_PROTO_ICMP                                              \
+    CASE_NET_IP_PROTO_TCP                                               \
+    CASE_NET_IP_PROTO_UDP                                               \
+    CASE_NET_IP_PROTO_GRE                                               \
+    CASE_NET_IP_PROTO_ESP                                               \
+    CASE_NET_IP_PROTO_AH                                                \
+    CASE_NET_IP_PROTO_SCTP                                              \
     default: next_proto = HE_UNKNOWN;                                   \
     }                                                                   \
+                                                                        \
+    HE_IP4_CHECK(dst)                                                   \
                                                                         \
     if (dst->frag & NET_IP_FLAGS_MF)                                    \
         next_proto = HE_UNKNOWN;                                        \
@@ -244,19 +453,35 @@ he_ip6_fit(sz, off)
     return (off + sizeof(struct ip6_hdr)) <= sz;
 }
 
+#ifdef ADD_NET_IP6_CHECK
+#define HE_IP6_CHECK(_dst)                                              \
+    if (_dst->ver != 6)                                                 \
+        next_proto = HE_ERROR_IP6_BAD_VER;                              \
+    if (_dst->hl <= 1)                                                  \
+        next_proto = HE_ERROR_IP6_BAD_HOP_LIMIT;
+#else
+#define HE_IP6_CHECK(_dst)
+#endif
+
 /* We use this portion of the switch statement in several places for
  * parsing IPv6 and extension header. Define it as a macro to avoid
  * code duplication.*/
 #define _IP6_PROTO_SWITCH \
-    case NET_IP_PROTO_TCP: next_proto = HE_TCP; break;              \
-    case NET_IP_PROTO_UDP: next_proto = HE_UDP; break;              \
-    case NET_IP_PROTO_GRE: next_proto = HE_GRE; break;              \
-    case NET_IP_PROTO_ESP: next_proto = HE_ESP; break;              \
-    case NET_IP_PROTO_HOPOPT: next_proto = HE_IP6_HBH; break;       \
-    case NET_IP_PROTO_ROUTING: next_proto = HE_IP6_RT; break;       \
-    case NET_IP_PROTO_FRAG: next_proto = HE_IP6_FRAG; break;        \
-    case NET_IP_PROTO_NONE: next_proto = HE_NONE; break;            \
-    case NET_IP_PROTO_DSTOPTS: next_proto = HE_IP6_DST; break;      \
+    CASE_NET_IP_PROTO_TCP                                           \
+    CASE_NET_IP_PROTO_UDP                                           \
+    CASE_NET_IP_PROTO_GRE                                           \
+    CASE_NET_IP_PROTO_ICMPV6                                        \
+    CASE_NET_IP_PROTO_SCTP                                          \
+    CASE_NET_IP_PROTO_HOPOPT                                        \
+    CASE_NET_IP_PROTO_ROUTING                                       \
+    CASE_NET_IP_PROTO_FRAG                                          \
+    CASE_NET_IP_PROTO_ESP                                           \
+    CASE_NET_IP_PROTO_AH                                            \
+    CASE_NET_IP_PROTO_NONE                                          \
+    CASE_NET_IP_PROTO_DSTOPTS                                       \
+    CASE_NET_IP_PROTO_MOBILITY                                      \
+    CASE_NET_IP_PROTO_HOST_ID                                       \
+    CASE_NET_IP_PROTO_SHIM6                                         \
     default: next_proto = HE_UNKNOWN
 
 #define HE_IP6_FUNC(dst)                                                \
@@ -264,6 +489,9 @@ he_ip6_fit(sz, off)
     switch(dst->nh) {                                                   \
         _IP6_PROTO_SWITCH;                                              \
     }                                                                   \
+                                                                        \
+    HE_IP6_CHECK(dst)                                                   \
+                                                                        \
     ret = HE_RES(next_proto, sizeof(struct ip6_hdr));
 
 __intrinsic unsigned int
@@ -290,47 +518,6 @@ he_ip6(void *src_buf, int off, void *dst)
     }
 
     return ret;
-}
-
-/* Minimal IPv6 extension header to find out where the next header
- * starts */
-struct _ip6_ext {
-    uint8_t nh;                     /** Next protocol */
-    uint8_t len;                    /** Length of the extension header */
-    uint16_t pad0;                  /** Padding */
-};
-
-__intrinsic int
-he_ip6_ext_skip_fit(sz, off)
-{
-    ctassert(__is_ct_const(sz));
-    ctassert(sz >= sizeof(__packed struct _ip6_ext));
-    return (off + sizeof(__packed struct _ip6_ext)) <= sz;
-}
-
-__intrinsic unsigned int
-he_ip6_ext_skip(void *src_buf, int off)
-{
-    __gpr __packed struct _ip6_ext dst;
-    __gpr unsigned int next_proto;
-    __gpr unsigned int len;
-
-    ctassert(__is_in_lmem(src_buf));
-
-    dst = *(__lmem struct _ip6_ext *)(((__lmem char *)src_buf) + off);
-
-    switch(dst.nh) {
-        _IP6_PROTO_SWITCH;
-    }
-
-    /* IPv6 Frag header is just that, but otherwise the len field is
-     * the number of 8 octets + 8 */
-    if (next_proto == HE_IP6_FRAG)
-        len = sizeof(struct ip6_frag);
-    else
-        len = 8 + (dst.len * 8);
-
-    return HE_RES(next_proto, len);
 }
 
 #undef _IP6_PROTO_SWITCH
@@ -433,9 +620,10 @@ he_gre_fit(sz, off)
     flags = dst->flags;                                                 \
                                                                         \
     switch(dst->proto) {                                                \
-    case NET_ETH_TYPE_TEB: next_proto = HE_ETHER; break;                \
-    case NET_ETH_TYPE_IPV4: next_proto = HE_IP4; break ;                \
-    case NET_ETH_TYPE_IPV6: next_proto = HE_IP6; break ;                \
+    CASE_NET_ETH_TYPE_TEB                                               \
+    CASE_NET_ETH_TYPE_IPV4                                              \
+    CASE_NET_ETH_TYPE_IPV6                                              \
+    CASE_NET_ETH_TYPE_MPLS                                              \
     default: next_proto = HE_UNKNOWN;                                   \
     }
 
@@ -528,3 +716,167 @@ he_vxlan(void *src_buf, int off, void *dst)
 
     return HE_RES(next_proto, len);
 }
+
+
+__intrinsic int
+he_mpls_fit(sz, off)
+{
+    ctassert(__is_ct_const(sz));
+    ctassert(sz >= sizeof(struct mpls_hdr));
+    return (off + sizeof(struct mpls_hdr)) <= sz;
+}
+
+#define HE_MPLS_FUNC(dst)                                                \
+    *dst = *(__lmem struct mpls_hdr *)(((__lmem char *)src_buf) + off);
+
+__intrinsic unsigned int
+he_mpls(void *src_buf, int off, void *dst)
+{
+    ctassert(__is_in_lmem(src_buf));
+    ctassert(__is_in_reg_or_lmem(dst));
+
+    if (__is_in_lmem(dst)) {
+#define __HE_MPLS ((__lmem struct mpls_hdr *)dst)
+        HE_MPLS_FUNC(__HE_MPLS);
+#undef __HE_MPLS
+    } else {
+#define __HE_MPLS ((__gpr struct mpls_hdr *)dst)
+        HE_MPLS_FUNC(__HE_MPLS);
+#undef __HE_MPLS
+    }
+
+    return HE_RES(HE_NONE, sizeof(struct mpls_hdr));
+}
+
+
+__intrinsic int
+he_sctp_fit(sz, off)
+{
+    ctassert(__is_ct_const(sz));
+    ctassert(sz >= sizeof(struct sctp_hdr));
+    return (off + sizeof(struct sctp_hdr)) <= sz;
+}
+
+#define HE_SCTP_FUNC(dst)                                                    \
+    *dst = *(__lmem struct sctp_hdr *)(((__lmem char *)src_buf) + off);      \
+    ret = HE_RES(HE_NONE, sizeof(struct sctp_hdr));
+
+__intrinsic unsigned int
+he_sctp(void *src_buf, int off, void *dst)
+{
+    __gpr unsigned int ret;
+    ctassert(__is_in_lmem(src_buf));
+    ctassert(__is_in_reg_or_lmem(dst));
+
+    if (__is_in_lmem(dst)) {
+#define __HE_SCTP ((__lmem struct sctp_hdr *)dst)
+        HE_SCTP_FUNC(__HE_SCTP);
+#undef __HE_SCTP
+    } else {
+#define __HE_SCTP ((__gpr struct sctp_hdr *)dst)
+        HE_SCTP_FUNC(__HE_SCTP);
+#undef __HE_SCTP
+    }
+
+    return ret;
+}
+
+
+__intrinsic int
+he_icmp_fit(sz, off)
+{
+    ctassert(__is_ct_const(sz));
+    ctassert(sz >= sizeof(struct icmp_hdr));
+    return (off + sizeof(struct icmp_hdr)) <= sz;
+}
+
+#define HE_ICMP_FUNC(dst)                                                    \
+    *dst = *(__lmem struct icmp_hdr *)(((__lmem char *)src_buf) + off);      \
+    ret = HE_RES(HE_UNKNOWN, sizeof(struct icmp_hdr));
+
+__intrinsic unsigned int
+he_icmp(void *src_buf, int off, void *dst)
+{
+    __gpr unsigned int ret;
+    ctassert(__is_in_lmem(src_buf));
+    ctassert(__is_in_reg_or_lmem(dst));
+
+    if (__is_in_lmem(dst)) {
+#define __HE_ICMP ((__lmem struct icmp_hdr *)dst)
+        HE_ICMP_FUNC(__HE_ICMP);
+#undef __HE_ICMP
+    } else {
+#define __HE_ICMP ((__gpr struct icmp_hdr *)dst)
+        HE_ICMP_FUNC(__HE_ICMP);
+#undef __HE_ICMP
+    }
+
+    return ret;
+}
+
+
+__intrinsic int
+he_esp_fit(sz, off)
+{
+    ctassert(__is_ct_const(sz));
+    ctassert(sz >= sizeof(struct esp_hdr));
+    return (off + sizeof(struct esp_hdr)) <= sz;
+}
+
+#define HE_ESP_FUNC(dst)                                                    \
+    *dst = *(__lmem struct esp_hdr *)(((__lmem char *)src_buf) + off);      \
+    ret = HE_RES(HE_UNKNOWN, sizeof(struct esp_hdr));
+
+__intrinsic unsigned int
+he_esp(void *src_buf, int off, void *dst)
+{
+    __gpr unsigned int ret;
+    ctassert(__is_in_lmem(src_buf));
+    ctassert(__is_in_reg_or_lmem(dst));
+
+    if (__is_in_lmem(dst)) {
+#define __HE_ESP ((__lmem struct esp_hdr *)dst)
+        HE_ESP_FUNC(__HE_ESP);
+#undef __HE_ESP
+    } else {
+#define __HE_ESP ((__gpr struct esp_hdr *)dst)
+        HE_ESP_FUNC(__HE_ESP);
+#undef __HE_ESP
+    }
+
+    return ret;
+}
+
+
+__intrinsic int
+he_ah_fit(sz, off)
+{
+    ctassert(__is_ct_const(sz));
+    ctassert(sz >= sizeof(struct ah_hdr));
+    return (off + sizeof(struct ah_hdr)) <= sz;
+}
+
+#define HE_AH_FUNC(dst)                                                    \
+    *dst = *(__lmem struct ah_hdr *)(((__lmem char *)src_buf) + off);      \
+    ret = HE_RES(HE_UNKNOWN, sizeof(struct ah_hdr));
+
+__intrinsic unsigned int
+he_ah(void *src_buf, int off, void *dst)
+{
+    __gpr unsigned int ret;
+    ctassert(__is_in_lmem(src_buf));
+    ctassert(__is_in_reg_or_lmem(dst));
+
+    if (__is_in_lmem(dst)) {
+#define __HE_AH ((__lmem struct ah_hdr *)dst)
+        HE_AH_FUNC(__HE_AH);
+#undef __HE_AH
+    } else {
+#define __HE_AH ((__gpr struct ah_hdr *)dst)
+        HE_AH_FUNC(__HE_AH);
+#undef __HE_AH
+    }
+
+    return ret;
+}
+

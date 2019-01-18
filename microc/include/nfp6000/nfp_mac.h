@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2015-2017,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,6 @@
 #define NFP_MAC_ECC_MON(x)                                 (0xa0000 + ((x) * 0x10000))
 /* IslandOverlayExtMap: <base>.MacOvlExt */
 #define NFP_MAC_OVL_EXT                                    0x300000
-
 
 
 /*
@@ -935,10 +934,10 @@
 #define     NFP_MAC_ETH_SEG_DEV_ABILITY_ACK_bit              (14)
 #define   NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT(x)        (((x) & 3) << 12)
 #define   NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_of(x)     (((x) >> 12) & 3)
-#define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_no error (0)
-#define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_link failure (1)
+#define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_no_error (0)
+#define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_link_failure (1)
 #define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_offline (2)
-#define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_autonegotiation error (3)
+#define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_autonegotiation_error (3)
 #define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_bf      0, 13, 12
 #define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_msk     (0x3)
 #define     NFP_MAC_ETH_SEG_DEV_ABILITY_REMOTE_FAULT_shf     (12)
@@ -1412,6 +1411,607 @@
 #define NFP_MAC_ETH_FEC_LT                                 0x7400
 /* MacEthPrbs: <base>.MacEthPrbs */
 #define NFP_MAC_ETH_PRBS                                   0x7800
+
+
+/*
+ * Macros for NFP_MAC_ETH_CHAN_PCS(x)
+ */
+
+/*
+ * Register: EthChPcsCtl1
+ *   [15]      EthPcsReset
+ *   [14]      EthPcsLoopback
+ *   [13]      EthPcsSpeedSelection13
+ *   [11]      EthPcsLowPower
+ *   [6]       EthPcsSpeedSelection6
+ *   [5:2]     EthPcsSpeedSel
+ *
+ * Name(s):
+ * <base>.EthChPcsCtl1
+ */
+#define NFP_MAC_ETH_CHAN_PCS_CTL1                          0x0000
+#define   NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_RESET            (1 << 15)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_RESET_bf       0, 15, 15
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_RESET_msk      (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_RESET_bit      (15)
+#define   NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_LOOPBACK         (1 << 14)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_LOOPBACK_bf    0, 14, 14
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_LOOPBACK_msk   (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_LOOPBACK_bit   (14)
+#define   NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SELECTION13 (1 << 13)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SELECTION13_bf 0, 13, 13
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SELECTION13_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SELECTION13_bit (13)
+#define   NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_LOW_POWER        (1 << 11)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_LOW_POWER_bf   0, 11, 11
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_LOW_POWER_msk  (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_LOW_POWER_bit  (11)
+#define   NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SELECTION6 (1 << 6)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SELECTION6_bf 0, 6, 6
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SELECTION6_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SELECTION6_bit (6)
+#define   NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL(x)     (((x) & 0xf) << 2)
+#define   NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL_of(x)  (((x) >> 2) & 0xf)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL_Mode (0)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL_Mode (1)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL_Mode (2)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL_Mode (3)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL_Mode (4)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL_bf   0, 5, 2
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL_msk  (0xf)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL1_ETH_PCS_SPEED_SEL_shf  (2)
+
+
+/*
+ * Register: EthChPcsStatus1
+ *   [7]       EthPcsFault
+ *   [2]       EthPcsRcvLinkStatus
+ *   [1]       EthPcsLowPowerAble
+ *
+ * Name(s):
+ * <base>.EthChPcsStatus1
+ */
+#define NFP_MAC_ETH_CHAN_PCS_STS1                          0x0004
+#define   NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_FAULT            (1 << 7)
+#define     NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_FAULT_bf       0, 7, 7
+#define     NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_FAULT_msk      (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_FAULT_bit      (7)
+#define   NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_RCV_LINK_STS     (1 << 2)
+#define     NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_RCV_LINK_STS_bf 0, 2, 2
+#define     NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_RCV_LINK_STS_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_RCV_LINK_STS_bit (2)
+#define   NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_LOW_POWER_ABILITY (1 << 1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_LOW_POWER_ABILITY_bf 0, 1, 1
+#define     NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_LOW_POWER_ABILITY_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS1_ETH_PCS_LOW_POWER_ABILITY_bit (1)
+
+
+/*
+ * Register: EthChPcsDevId0
+ *   [3:0]     EthPcsDevId
+ *
+ * Name(s):
+ * <base>.EthChPcsDevId0
+ */
+#define NFP_MAC_ETH_CHAN_PCS_DEV_ID0                       0x0008
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_ID0_ETH_PCS_DEV_ID(x)     (((x) & 0xf) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_ID0_ETH_PCS_DEV_ID_of(x)  (((x) >> 0) & 0xf)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_ID0_ETH_PCS_DEV_ID_bf   0, 3, 0
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_ID0_ETH_PCS_DEV_ID_msk  (0xf)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_ID0_ETH_PCS_DEV_ID_shf  (0)
+
+
+/*
+ * Register: EthChPcsDevId1
+ *
+ * Name(s):
+ * <base>.EthChPcsDevId1
+ */
+#define NFP_MAC_ETH_CHAN_PCS_DEV_ID1                       0x000c
+
+
+/*
+ * Register: EthChPcsSpeedAbility
+ *   [8]       EthPcsSpeed100GCapable
+ *   [7]       EthPcsSpeed40GCapable
+ *   [1]       EthPcsSpeed10PassTs2BaseTlCapable
+ *   [0]       EthPcsSpeed10GCapable
+ *
+ * Name(s):
+ * <base>.EthChPcsSpeedAbility
+ */
+#define NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY                0x0010
+#define   NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_100G_CAPABLE (1 << 8)
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_100G_CAPABLE_bf 0, 8, 8
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_100G_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_100G_CAPABLE_bit (8)
+#define   NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_40G_CAPABLE (1 << 7)
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_40G_CAPABLE_bf 0, 7, 7
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_40G_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_40G_CAPABLE_bit (7)
+#define   NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_10PASS_TS_2BASE_TL_CAPABLE (1 << 1)
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_10PASS_TS_2BASE_TL_CAPABLE_bf 0, 1, 1
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_10PASS_TS_2BASE_TL_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_10PASS_TS_2BASE_TL_CAPABLE_bit (1)
+#define   NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_10G_CAPABLE (1 << 0)
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_10G_CAPABLE_bf 0, 0, 0
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_10G_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_SPEED_ABLILITY_ETH_PCS_SPEED_10G_CAPABLE_bit (0)
+
+
+/*
+ * Register: EthChPcsDevInPkg1
+ *   [6]       EthPcsTcPresent
+ *   [5]       EthPcsDteXsPresent
+ *   [4]       EthPcsPhyXsPresent
+ *   [3]       EthPcsPCSPresent
+ *   [2]       EthPcsWisPresent
+ *   [1]       EthPcsPmdPmaPresent
+ *   [0]       EthPcsClause22RegsPresent
+ *
+ * Name(s):
+ * <base>.EthChPcsDevInPkg1
+ */
+#define NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1                   0x0014
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_TC_PRESENT (1 << 6)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_TC_PRESENT_bf 0, 6, 6
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_TC_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_TC_PRESENT_bit (6)
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_DTE_XS_PRESENT (1 << 5)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_DTE_XS_PRESENT_bf 0, 5, 5
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_DTE_XS_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_DTE_XS_PRESENT_bit (5)
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PHY_XS_PRESENT (1 << 4)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PHY_XS_PRESENT_bf 0, 4, 4
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PHY_XS_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PHY_XS_PRESENT_bit (4)
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PCS_PRESENT (1 << 3)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PCS_PRESENT_bf 0, 3, 3
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PCS_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PCS_PRESENT_bit (3)
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_WIS_PRESENT (1 << 2)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_WIS_PRESENT_bf 0, 2, 2
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_WIS_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_WIS_PRESENT_bit (2)
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PMD_PMA_PRESENT (1 << 1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PMD_PMA_PRESENT_bf 0, 1, 1
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PMD_PMA_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_PMD_PMA_PRESENT_bit (1)
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_CLAUSE22_REGS_PRESENT (1 << 0)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_CLAUSE22_REGS_PRESENT_bf 0, 0, 0
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_CLAUSE22_REGS_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG1_ETH_PCS_CLAUSE22_REGS_PRESENT_bit (0)
+
+
+/*
+ * Register: EthChPcsDevInPkg2
+ *   [15]      EthPcsVndrDev2Present
+ *   [14]      EthPcsVndrDev1Present
+ *   [13]      EthPcsClause22ExtPresent
+ *
+ * Name(s):
+ * <base>.EthChPcsDevInPkg2
+ */
+#define NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2                   0x0018
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_VENDOR_DEV2_PRESENT (1 << 15)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_VENDOR_DEV2_PRESENT_bf 0, 15, 15
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_VENDOR_DEV2_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_VENDOR_DEV2_PRESENT_bit (15)
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_VENDOR_DEV1_PRESENT (1 << 14)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_VENDOR_DEV1_PRESENT_bf 0, 14, 14
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_VENDOR_DEV1_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_VENDOR_DEV1_PRESENT_bit (14)
+#define   NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_CLAUSE22_EXT_PRESENT (1 << 13)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_CLAUSE22_EXT_PRESENT_bf 0, 13, 13
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_CLAUSE22_EXT_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_DEV_IN_PKG2_ETH_PCS_CLAUSE22_EXT_PRESENT_bit (13)
+
+
+/*
+ * Register: EthChPcsCtl2
+ *   [2:0]     EthPcsTypeSelection
+ *
+ * Name(s):
+ * <base>.EthChPcsCtl2
+ */
+#define NFP_MAC_ETH_CHAN_PCS_CTL2                          0x001c
+#define   NFP_MAC_ETH_CHAN_PCS_CTL2_ETH_PCS_TYPE_SELECTION(x) (((x) & 7) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_CTL2_ETH_PCS_TYPE_SELECTION_of(x) (((x) >> 0) & 7)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL2_ETH_PCS_TYPE_SELECTION_bf 0, 2, 0
+#define     NFP_MAC_ETH_CHAN_PCS_CTL2_ETH_PCS_TYPE_SELECTION_msk (0x7)
+#define     NFP_MAC_ETH_CHAN_PCS_CTL2_ETH_PCS_TYPE_SELECTION_shf (0)
+
+
+/*
+ * Register: EthChPcsStatus2
+ *   [15:14]   EthPcsDevPresent
+ *   [5]       EthPcs100GBaseRCapable
+ *   [4]       EthPcs40GBaseRCapable
+ *   [3]       EthPcs10GBaseTCapable
+ *   [2]       EthPcs10GBaseWCapable
+ *   [1]       EthPcs10GBaseXCapable
+ *   [0]       EthPcs10GBaseRCapable
+ *
+ * Name(s):
+ * <base>.EthChPcsStatus2
+ */
+#define NFP_MAC_ETH_CHAN_PCS_STS2                          0x0020
+#define   NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_DEV_PRESENT(x)   (((x) & 3) << 14)
+#define   NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_DEV_PRESENT_of(x) (((x) >> 14) & 3)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_DEV_PRESENT_bf 0, 15, 14
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_DEV_PRESENT_msk (0x3)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_DEV_PRESENT_shf (14)
+#define   NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_100GBASE_R_CAPABLE (1 << 5)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_100GBASE_R_CAPABLE_bf 0, 5, 5
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_100GBASE_R_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_100GBASE_R_CAPABLE_bit (5)
+#define   NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_40GBASE_R_CAPABLE (1 << 4)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_40GBASE_R_CAPABLE_bf 0, 4, 4
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_40GBASE_R_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_40GBASE_R_CAPABLE_bit (4)
+#define   NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_T_CAPABLE (1 << 3)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_T_CAPABLE_bf 0, 3, 3
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_T_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_T_CAPABLE_bit (3)
+#define   NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_W_CAPABLE (1 << 2)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_W_CAPABLE_bf 0, 2, 2
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_W_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_W_CAPABLE_bit (2)
+#define   NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_X_CAPABLE (1 << 1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_X_CAPABLE_bf 0, 1, 1
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_X_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_X_CAPABLE_bit (1)
+#define   NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_R_CAPABLE (1 << 0)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_R_CAPABLE_bf 0, 0, 0
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_R_CAPABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_STS2_ETH_PCS_10GBASE_R_CAPABLE_bit (0)
+
+
+/*
+ * Register: EthChPcsBaseRStatus1
+ *   [12]      EthPcsRcvLinkStatus
+ *   [3]       EthPcsPrbs9Able
+ *   [2]       EthPcsPrbs31Able
+ *   [1]       EthPcsHighBer
+ *   [0]       EthPcsBlockLocked
+ *
+ * Name(s):
+ * <base>.EthChPcsBaseRStatus1
+ */
+#define NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1                   0x0080
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_RCV_LINK_STS (1 << 12)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_RCV_LINK_STS_bf 0, 12, 12
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_RCV_LINK_STS_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_RCV_LINK_STS_bit (12)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_PRBS9_ABLE (1 << 3)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_PRBS9_ABLE_bf 0, 3, 3
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_PRBS9_ABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_PRBS9_ABLE_bit (3)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_PRBS31_ABLE (1 << 2)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_PRBS31_ABLE_bf 0, 2, 2
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_PRBS31_ABLE_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_PRBS31_ABLE_bit (2)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_HIGH_BER  (1 << 1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_HIGH_BER_bf 0, 1, 1
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_HIGH_BER_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_HIGH_BER_bit (1)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_BLOCK_LOCKED (1 << 0)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_BLOCK_LOCKED_bf 0, 0, 0
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_BLOCK_LOCKED_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS1_ETH_PCS_BLOCK_LOCKED_bit (0)
+
+
+/*
+ * Register: EthChPcsBaseRStatus2
+ *   [15]      EthPcsLatchedBlockLock
+ *   [14]      EthPcsLatchedHighBerr
+ *   [13:8]    EthPcsBerCounter
+ *   [7:0]     EthPcsErrorBlockCounter
+ *
+ * Name(s):
+ * <base>.EthChPcsBaseRStatus2
+ */
+#define NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2                   0x0084
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_LATCHED_BLOCK_LOCK (1 << 15)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_LATCHED_BLOCK_LOCK_bf 0, 15, 15
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_LATCHED_BLOCK_LOCK_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_LATCHED_BLOCK_LOCK_bit (15)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_LATCHED_HIGH_BER (1 << 14)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_LATCHED_HIGH_BER_bf 0, 14, 14
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_LATCHED_HIGH_BER_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_LATCHED_HIGH_BER_bit (14)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_BER_CNTR(x) (((x) & 0x3f) << 8)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_BER_CNTR_of(x) (((x) >> 8) & 0x3f)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_BER_CNTR_bf 0, 13, 8
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_BER_CNTR_msk (0x3f)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_BER_CNTR_shf (8)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_ERRORED_BLOCK_CNTR(x) (((x) & 0xff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_ERRORED_BLOCK_CNTR_of(x) (((x) >> 0) & 0xff)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_ERRORED_BLOCK_CNTR_bf 0, 7, 0
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_ERRORED_BLOCK_CNTR_msk (0xff)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_STS2_ETH_PCS_ERRORED_BLOCK_CNTR_shf (0)
+
+
+/*
+ * Register: EthChPcsTestPatSeedData
+ *   [15:0]    EthPcsTestPatSeedData
+ *
+ * Name(s):
+ * <base>.EthChPcs10GSeedA0 <base>.EthChPcs10GSeedA1 <base>.EthChPcs10GSeedA2
+ * <base>.EthChPcs10GSeedB0 <base>.EthChPcs10GSeedB1 <base>.EthChPcs10GSeedB2
+ */
+#define NFP_MAC_ETH_CHAN_PCS_10G_SEED_A0                   0x0088
+#define NFP_MAC_ETH_CHAN_PCS_10G_SEED_A1                   0x008c
+#define NFP_MAC_ETH_CHAN_PCS_10G_SEED_A2                   0x0090
+#define NFP_MAC_ETH_CHAN_PCS_10G_SEED_B0                   0x0098
+#define NFP_MAC_ETH_CHAN_PCS_10G_SEED_B1                   0x009c
+#define NFP_MAC_ETH_CHAN_PCS_10G_SEED_B2                   0x00a0
+#define   NFP_MAC_ETH_CHAN_PCS_10G_SEED_A0_ETH_PCS_TEST_PAT_SEED_DATA(x) (((x) & 0xffff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_10G_SEED_A0_ETH_PCS_TEST_PAT_SEED_DATA_of(x) (((x) >> 0) & 0xffff)
+#define     NFP_MAC_ETH_CHAN_PCS_10G_SEED_A0_ETH_PCS_TEST_PAT_SEED_DATA_bf 0, 15, 0
+#define     NFP_MAC_ETH_CHAN_PCS_10G_SEED_A0_ETH_PCS_TEST_PAT_SEED_DATA_msk (0xffff)
+#define     NFP_MAC_ETH_CHAN_PCS_10G_SEED_A0_ETH_PCS_TEST_PAT_SEED_DATA_shf (0)
+
+
+/*
+ * Register: EthChPcsTestPatSeedDataH
+ *   [9:0]     EthPcsTestPatSeedDataH
+ *
+ * Name(s):
+ * <base>.EthChPcs10GSeedA3 <base>.EthChPcs10GSeedB3
+ */
+#define NFP_MAC_ETH_CHAN_PCS_10G_SEED_A3                   0x0094
+#define NFP_MAC_ETH_CHAN_PCS_10G_SEED_B3                   0x00a4
+#define   NFP_MAC_ETH_CHAN_PCS_10G_SEED_A3_ETH_PCS_TEST_PAT_SEED_DATA_H(x) (((x) & 0x3ff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_10G_SEED_A3_ETH_PCS_TEST_PAT_SEED_DATA_H_of(x) (((x) >> 0) & 0x3ff)
+#define     NFP_MAC_ETH_CHAN_PCS_10G_SEED_A3_ETH_PCS_TEST_PAT_SEED_DATA_H_bf 0, 9, 0
+#define     NFP_MAC_ETH_CHAN_PCS_10G_SEED_A3_ETH_PCS_TEST_PAT_SEED_DATA_H_msk (0x3ff)
+#define     NFP_MAC_ETH_CHAN_PCS_10G_SEED_A3_ETH_PCS_TEST_PAT_SEED_DATA_H_shf (0)
+
+
+/*
+ * Register: EthChPcsBaseRTestCtl
+ *   [6]       EthPcsPrbs9TransmitPatEn
+ *   [5]       EthPcsPrbs31ReceivePatEn
+ *   [4]       EthPcsPrbs31TransmitPatEn
+ *   [3]       EthPcsTransmitTestPatEn
+ *   [2]       EthPcsReceiveTestPatEn
+ *   [1]       EthPcsTestPatSel
+ *   [0]       EthPcsDataPatSel
+ *
+ * Name(s):
+ * <base>.EthChPcsBaseRTestCtl
+ */
+#define NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL               0x00a8
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS9_TRANSMIT_PAT_EN (1 << 6)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS9_TRANSMIT_PAT_EN_bf 0, 6, 6
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS9_TRANSMIT_PAT_EN_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS9_TRANSMIT_PAT_EN_bit (6)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS31_RECEIVE_PAT_EN (1 << 5)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS31_RECEIVE_PAT_EN_bf 0, 5, 5
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS31_RECEIVE_PAT_EN_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS31_RECEIVE_PAT_EN_bit (5)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS31_TRANSMIT_PAT_EN (1 << 4)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS31_TRANSMIT_PAT_EN_bf 0, 4, 4
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS31_TRANSMIT_PAT_EN_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_PRBS31_TRANSMIT_PAT_EN_bit (4)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_TRANSMIT_TEST_PAT_EN (1 << 3)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_TRANSMIT_TEST_PAT_EN_bf 0, 3, 3
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_TRANSMIT_TEST_PAT_EN_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_TRANSMIT_TEST_PAT_EN_bit (3)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_RECEIVE_TEST_PAT_EN (1 << 2)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_RECEIVE_TEST_PAT_EN_bf 0, 2, 2
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_RECEIVE_TEST_PAT_EN_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_RECEIVE_TEST_PAT_EN_bit (2)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_TEST_PAT_SEL (1 << 1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_TEST_PAT_SEL_bf 0, 1, 1
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_TEST_PAT_SEL_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_TEST_PAT_SEL_bit (1)
+#define   NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_DATA_PAT_SEL (1 << 0)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_DATA_PAT_SEL_bf 0, 0, 0
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_DATA_PAT_SEL_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_BASE_R_TEST_CTL_ETH_PCS_DATA_PAT_SEL_bit (0)
+
+
+/*
+ * Register: EthChPcsTestErrCnt
+ *   [15:0]    EthPcsTestErrCnt
+ *
+ * Name(s):
+ * <base>.EthChPcsTestCnt
+ */
+#define NFP_MAC_ETH_CHAN_PCS_TEST_ERR_CNT                  0x00ac
+#define   NFP_MAC_ETH_CHAN_PCS_TEST_ERR_CNT_ETH_PCS_TEST_ERR_CNT(x) (((x) & 0xffff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_TEST_ERR_CNT_ETH_PCS_TEST_ERR_CNT_of(x) (((x) >> 0) & 0xffff)
+#define     NFP_MAC_ETH_CHAN_PCS_TEST_ERR_CNT_ETH_PCS_TEST_ERR_CNT_bf 0, 15, 0
+#define     NFP_MAC_ETH_CHAN_PCS_TEST_ERR_CNT_ETH_PCS_TEST_ERR_CNT_msk (0xffff)
+#define     NFP_MAC_ETH_CHAN_PCS_TEST_ERR_CNT_ETH_PCS_TEST_ERR_CNT_shf (0)
+
+
+/*
+ * Register: EthChPcsBerHiOrderCnt
+ *   [15:0]    EthPcsBerHiOrderCnt
+ *
+ * Name(s):
+ * <base>.EthChPcsBerHiOrderCnt
+ */
+#define NFP_MAC_ETH_CHAN_PCS_BER_HI_ORDER_CNT              0x00b0
+#define   NFP_MAC_ETH_CHAN_PCS_BER_HI_ORDER_CNT_ETH_PCS_BER_HI_ORDER_CNT(x) (((x) & 0xffff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_BER_HI_ORDER_CNT_ETH_PCS_BER_HI_ORDER_CNT_of(x) (((x) >> 0) & 0xffff)
+#define     NFP_MAC_ETH_CHAN_PCS_BER_HI_ORDER_CNT_ETH_PCS_BER_HI_ORDER_CNT_bf 0, 15, 0
+#define     NFP_MAC_ETH_CHAN_PCS_BER_HI_ORDER_CNT_ETH_PCS_BER_HI_ORDER_CNT_msk (0xffff)
+#define     NFP_MAC_ETH_CHAN_PCS_BER_HI_ORDER_CNT_ETH_PCS_BER_HI_ORDER_CNT_shf (0)
+
+
+/*
+ * Register: EthChPcsErrBlkHiOrderCnt
+ *   [15]      EthPcsHiOrderCntPresent
+ *   [13:0]    EthPcsErrBlkHiOrderCnt
+ *
+ * Name(s):
+ * <base>.EthChPcsErrBlkHiOrderCnt
+ */
+#define NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT          0x00b4
+#define   NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT_ETH_PCS_HI_ORDER_CNT_PRESENT (1 << 15)
+#define     NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT_ETH_PCS_HI_ORDER_CNT_PRESENT_bf 0, 15, 15
+#define     NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT_ETH_PCS_HI_ORDER_CNT_PRESENT_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT_ETH_PCS_HI_ORDER_CNT_PRESENT_bit (15)
+#define   NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT_ETH_PCS_ERR_BLK_HI_ORDER_CNT(x) (((x) & 0x3fff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT_ETH_PCS_ERR_BLK_HI_ORDER_CNT_of(x) (((x) >> 0) & 0x3fff)
+#define     NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT_ETH_PCS_ERR_BLK_HI_ORDER_CNT_bf 0, 13, 0
+#define     NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT_ETH_PCS_ERR_BLK_HI_ORDER_CNT_msk (0x3fff)
+#define     NFP_MAC_ETH_CHAN_PCS_ERR_BLK_HI_ORDER_CNT_ETH_PCS_ERR_BLK_HI_ORDER_CNT_shf (0)
+
+
+/*
+ * Register: EthChPcsLaneAlignStat1
+ *   [12]      EthPcsLaneAlignmentStatus
+ *   [7:0]     EthPcsLaneBlockLock
+ *
+ * Name(s):
+ * <base>.EthChPcsLaneAlignStat1
+ */
+#define NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1        0x00c8
+#define   NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1_ETH_PCS_LANE_ALIGN_STS (1 << 12)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1_ETH_PCS_LANE_ALIGN_STS_bf 0, 12, 12
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1_ETH_PCS_LANE_ALIGN_STS_msk (0x1)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1_ETH_PCS_LANE_ALIGN_STS_bit (12)
+#define   NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1_ETH_PCS_LANE_BLOCK_LOCK(x) (((x) & 0xff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1_ETH_PCS_LANE_BLOCK_LOCK_of(x) (((x) >> 0) & 0xff)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1_ETH_PCS_LANE_BLOCK_LOCK_bf 0, 7, 0
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1_ETH_PCS_LANE_BLOCK_LOCK_msk (0xff)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_1_ETH_PCS_LANE_BLOCK_LOCK_shf (0)
+
+
+/*
+ * Register: EthChPcsLaneAlignStat2
+ *   [11:0]    EthPcsLaneBlockLock
+ *
+ * Name(s):
+ * <base>.EthChPcsLaneAlignStat2
+ */
+#define NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_2        0x00cc
+#define   NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_2_ETH_PCS_LANE_BLOCK_LOCK(x) (((x) & 0xfff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_2_ETH_PCS_LANE_BLOCK_LOCK_of(x) (((x) >> 0) & 0xfff)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_2_ETH_PCS_LANE_BLOCK_LOCK_bf 0, 11, 0
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_2_ETH_PCS_LANE_BLOCK_LOCK_msk (0xfff)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_2_ETH_PCS_LANE_BLOCK_LOCK_shf (0)
+
+
+/*
+ * Register: EthChPcsLaneAlignStat3
+ *   [7:0]     EthPcsLaneAlignMkrLock
+ *
+ * Name(s):
+ * <base>.EthChPcsLaneAlignStat3
+ */
+#define NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_3        0x00d0
+#define   NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_3_ETH_PCS_LANE_ALIGN_MARKER_LOCK(x) (((x) & 0xff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_3_ETH_PCS_LANE_ALIGN_MARKER_LOCK_of(x) (((x) >> 0) & 0xff)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_3_ETH_PCS_LANE_ALIGN_MARKER_LOCK_bf 0, 7, 0
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_3_ETH_PCS_LANE_ALIGN_MARKER_LOCK_msk (0xff)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_3_ETH_PCS_LANE_ALIGN_MARKER_LOCK_shf (0)
+
+
+/*
+ * Register: EthChPcsLaneAlignStat4
+ *   [11:0]    EthPcsLaneAlignMkrLock
+ *
+ * Name(s):
+ * <base>.EthChPcsLaneAlignStat4
+ */
+#define NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_4        0x00d4
+#define   NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_4_ETH_PCS_LANE_ALIGN_MARKER_LOCK(x) (((x) & 0xfff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_4_ETH_PCS_LANE_ALIGN_MARKER_LOCK_of(x) (((x) >> 0) & 0xfff)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_4_ETH_PCS_LANE_ALIGN_MARKER_LOCK_bf 0, 11, 0
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_4_ETH_PCS_LANE_ALIGN_MARKER_LOCK_msk (0xfff)
+#define     NFP_MAC_ETH_CHAN_PCS_MULTILANE_ALIGN_STAT_4_ETH_PCS_LANE_ALIGN_MARKER_LOCK_shf (0)
+
+
+/*
+ * Register: EthChPcsBipErrCnt
+ *   [15:0]    EthPcsBipErrCnt
+ *
+ * Name(s):
+ * <base>.EthChPcsBipErrCntLane0 <base>.EthChPcsBipErrCntLane1
+ * <base>.EthChPcsBipErrCntLane2 <base>.EthChPcsBipErrCntLane3
+ * <base>.EthChPcsBipErrCntLane4 <base>.EthChPcsBipErrCntLane5
+ * <base>.EthChPcsBipErrCntLane6 <base>.EthChPcsBipErrCntLane7
+ * <base>.EthChPcsBipErrCntLane8 <base>.EthChPcsBipErrCntLane9
+ * <base>.EthChPcsBipErrCntLane10 <base>.EthChPcsBipErrCntLane11
+ * <base>.EthChPcsBipErrCntLane12 <base>.EthChPcsBipErrCntLane13
+ * <base>.EthChPcsBipErrCntLane14 <base>.EthChPcsBipErrCntLane15
+ * <base>.EthChPcsBipErrCntLane16 <base>.EthChPcsBipErrCntLane17
+ * <base>.EthChPcsBipErrCntLane18 <base>.EthChPcsBipErrCntLane19
+ */
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE0             0x0168
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE1             0x016c
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE2             0x0170
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE3             0x0174
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE4             0x0178
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE5             0x017c
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE6             0x0180
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE7             0x0184
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE8             0x0188
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE9             0x018c
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE10            0x0190
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE11            0x0194
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE12            0x0198
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE13            0x019c
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE14            0x01a0
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE15            0x01a4
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE16            0x01a8
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE17            0x01ac
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE18            0x01b0
+#define NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE19            0x01b4
+#define   NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE0_ETH_PCS_BIP_ERR_CNT(x) (((x) & 0xffff) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE0_ETH_PCS_BIP_ERR_CNT_of(x) (((x) >> 0) & 0xffff)
+#define     NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE0_ETH_PCS_BIP_ERR_CNT_bf 0, 15, 0
+#define     NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE0_ETH_PCS_BIP_ERR_CNT_msk (0xffff)
+#define     NFP_MAC_ETH_CHAN_PCS_BIP_ERR_CNT_LANE0_ETH_PCS_BIP_ERR_CNT_shf (0)
+
+
+/*
+ * Register: EthChPcsLaneMap
+ *   [4:0]     EthPcsLaneMap
+ *
+ * Name(s):
+ * <base>.EthChPcsLaneMapLane0 <base>.EthChPcsLaneMapLane1
+ * <base>.EthChPcsLaneMapLane2 <base>.EthChPcsLaneMapLane3
+ * <base>.EthChPcsLaneMapLane4 <base>.EthChPcsLaneMapLane5
+ * <base>.EthChPcsLaneMapLane6 <base>.EthChPcsLaneMapLane7
+ * <base>.EthChPcsLaneMapLane8 <base>.EthChPcsLaneMapLane9
+ * <base>.EthChPcsLaneMapLane10 <base>.EthChPcsLaneMapLane11
+ * <base>.EthChPcsLaneMapLane12 <base>.EthChPcsLaneMapLane13
+ * <base>.EthChPcsLaneMapLane14 <base>.EthChPcsLaneMapLane15
+ * <base>.EthChPcsLaneMapLane16 <base>.EthChPcsLaneMapLane17
+ * <base>.EthChPcsLaneMapLane18 <base>.EthChPcsLaneMapLane19
+ */
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE0                0x01b8
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE1                0x01bc
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE2                0x01c0
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE3                0x01c4
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE4                0x01c8
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE5                0x01cc
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE6                0x01d0
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE7                0x01d4
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE8                0x01d8
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE9                0x01dc
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE10               0x01e0
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE11               0x01e4
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE12               0x01e8
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE13               0x01ec
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE14               0x01f0
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE15               0x01f4
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE16               0x01f8
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE17               0x01fc
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE18               0x0200
+#define NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE19               0x0204
+#define   NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE0_ETH_PCS_LANE_MAP(x) (((x) & 0x1f) << 0)
+#define   NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE0_ETH_PCS_LANE_MAP_of(x) (((x) >> 0) & 0x1f)
+#define     NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE0_ETH_PCS_LANE_MAP_bf 0, 4, 0
+#define     NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE0_ETH_PCS_LANE_MAP_msk (0x1f)
+#define     NFP_MAC_ETH_CHAN_PCS_LANE_MAP_LANE0_ETH_PCS_LANE_MAP_shf (0)
 
 
 /*
@@ -4208,7 +4808,6 @@
 #define     NFP_MAC_CSR_ASSERT_CONFIG_CSR1_FSM_CFG0_bf       0, 7, 0
 #define     NFP_MAC_CSR_ASSERT_CONFIG_CSR1_FSM_CFG0_msk      (0xff)
 #define     NFP_MAC_CSR_ASSERT_CONFIG_CSR1_FSM_CFG0_shf      (0)
-
 
 
 /*

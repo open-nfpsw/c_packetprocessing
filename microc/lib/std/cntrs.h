@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2012-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,7 +166,7 @@ union stats_push_cmd {
  *                  (must be 256 bytes aligned)
  * @return Base address as expected for the counters APIs.
  */
-__intrinsic unsigned int cntr64_get_addr(__mem void *base);
+__intrinsic unsigned int cntr64_get_addr(__mem40 void *base);
 
 /**
  * Clear a 64 bits ctm/imem/emem counter.

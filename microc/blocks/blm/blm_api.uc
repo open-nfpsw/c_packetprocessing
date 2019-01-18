@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file        libblm_pkt_fl.uc
- * @brief
+ * @file        blm_api.uc
+ * @brief       Microcode API implementation for BLM buffer alloc/free
  */
 
 #ifndef __BLM_BUF_API_UC__
 #define __BLM_BUF_API_UC__
 
 #include <ring_utils.uc>
-#include "libblm.h"
+#include "_h/blm_uc.h"
 
 /** @file nfp_buf_api.uc Buffer List Manager Macros
  * @addtogroup blm_api Buffer List Manager

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2014-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -525,6 +525,11 @@ struct ctm_pkt_credits {
     unsigned int bufs;
 };
 
+/* CTM credit allocation fail sleep */
+#ifndef PKT_CTM_CRED_ALLOC_FAIL_SLEEP
+#define PKT_CTM_CRED_ALLOC_FAIL_SLEEP 1000
+#endif
+
 /**
  * Packet Engine response for packet_alloc commands.
  */
@@ -556,12 +561,36 @@ struct pe_credit_get_res {
 
 
 /**
+ * Receive a packet from a the local island's CTM workq receiving NBI
+ * metadata and/or MAC prepend data in the same push.  The NBI metadata
+ * goes in the first 6 words of the 'meta' parameter while the MAC
+ * prepend and/or header data goes in the subsequent words.  The user
+ * is not required to supply transfer-register space to this call
+ * beyond the first 6 words.
+ *
+ * @param meta  Pointer to the location to store the packet metadata
+ *              followed by (optional) space for prepend/packet header data
+ * @param msize The size of the metadata/prepend/header buffer (in bytes)
+ * @param off   The offset in bytes to receive data from in the CTM buffer;
+ *              this is the packet offset from which to receive data after
+ *              the first 24 bytes of metadata (must be a multiple of 4)
+ * @param sync  The type of synchronization (sig_done or ctx_swap)
+ * @param sig   The signal to use
+ */
+__intrinsic void __pkt_nbi_recv_with_hdrs(__xread void *meta, size_t msize,
+                                          uint32_t off, sync_t sync,
+                                          SIGNAL *sig);
+
+__intrinsic void pkt_nbi_recv_with_hdrs(__xread void *meta, size_t msize,
+                                        uint32_t off);
+
+/**
  * Receive a packet from a the local island's CTM workq.
  *
  * @param meta  Pointer to the location to store the packet metadata
  * @param msize The size of the metadata buffer (in bytes)
  * @param sync  The type of synchronization (sig_done or ctx_swap)
- * @param sig   The signal to use.
+ * @param sig   The signal to use
  */
 __intrinsic void __pkt_nbi_recv(__xread void *meta, size_t msize, sync_t sync,
                                 SIGNAL *sig);
@@ -577,7 +606,7 @@ __intrinsic void pkt_nbi_recv(__xread void *meta, size_t msize);
  * @param pnum  The CTM packet number
  * @param off   The offset within the CTM buffer
  */
-__intrinsic __addr40 void *pkt_ctm_ptr40(unsigned char isl, unsigned int pnum,
+__intrinsic __mem40 void *pkt_ctm_ptr40(unsigned char isl, unsigned int pnum,
                                          unsigned int off);
 
 /**
@@ -588,7 +617,7 @@ __intrinsic __addr40 void *pkt_ctm_ptr40(unsigned char isl, unsigned int pnum,
  * @param pnum  The CTM packet number
  * @param off   The offset within the CTM buffer
  */
-__intrinsic __addr32 void *pkt_ctm_ptr32(unsigned int pnum, unsigned int off);
+__intrinsic __mem32 void *pkt_ctm_ptr32(unsigned int pnum, unsigned int off);
 
 
 /**
@@ -720,10 +749,10 @@ __intrinsic size_t pkt_emem_data_size(unsigned int pkt_len,
  *       command word as part of the packet data.
  */
 __intrinsic void __pkt_mac_egress_cmd_write(
-    __addr40 void *pbuf, unsigned char off, int l3_csum_ins, int l4_csum_ins,
+    __mem40 void *pbuf, unsigned char off, int l3_csum_ins, int l4_csum_ins,
     __xwrite uint32_t *xcmd, sync_t sync, SIGNAL *sig);
 
-__intrinsic void pkt_mac_egress_cmd_write(__addr40 void *pbuf,
+__intrinsic void pkt_mac_egress_cmd_write(__mem40 void *pbuf,
                                           unsigned char off, int l3_csum_ins,
                                           int l4_csum_ins);
 
@@ -743,13 +772,13 @@ __intrinsic void pkt_mac_egress_cmd_write(__addr40 void *pbuf,
  * must be at least 16 bytes between this pointer and the beginning of
  * the CTM buffer.
  */
-__intrinsic struct pkt_ms_info __pkt_msd_write(__addr40 void *pbuf,
+__intrinsic struct pkt_ms_info __pkt_msd_write(__mem40 void *pbuf,
                                                unsigned char off,
                                                __xwrite uint32_t xms[2],
                                                size_t size, sync_t sync,
                                                SIGNAL *sig);
 
-__intrinsic struct pkt_ms_info pkt_msd_write(__addr40 void *pbuf,
+__intrinsic struct pkt_ms_info pkt_msd_write(__mem40 void *pbuf,
                                              unsigned char off);
 
 
@@ -829,13 +858,22 @@ __intrinsic void pkt_nbi_drop_seq(unsigned char isl, unsigned int pnum,
  *
  *  3. Get credits for the packets to be allocated (could be skipped if done
  *     internally in the pkt_ctm_alloc function).
- *      pkt_ctm_get_credits(&my_credits, NUM_PKTS, NUM_BUFS);
+ *      pkt_ctm_get_credits(&my_credits, NUM_PKTS, NUM_BUFS, 0);
+ *     or
+ *      pkt_ctm_get_credits(&my_credits, NUM_PKTS, NUM_BUFS, 1);
  *
  *  4. Allocate packets (one at a time, in this example 256 bytes)
- *      pkt_num = pkt_ctm_alloc(&my_credits, isl_num, PKT_CTM_SIZE_256, 0);
+ *     (do not allocate or replenish credits; already performed):
+ *      pkt_num = pkt_ctm_alloc(&my_credits, isl_num, PKT_CTM_SIZE_256, 0, 0);
+ *     or (allocate but do not replenish credits if low):
+ *      pkt_num = pkt_ctm_alloc(&my_credits, isl_num, PKT_CTM_SIZE_256, 1, 0);
+ *     or (allocate and replenish credits if low):
+ *      pkt_num = pkt_ctm_alloc(&my_credits, isl_num, PKT_CTM_SIZE_256, 1, 1);
  *
- *  5. Periodically replenish the credit buckets.
- *      pkt_ctm_poll_pe_credit(&my_credits, PKT_CTM_SIZE_256);
+ *  5. (optional) Periodically replenish the credit buckets.  One can omit
+ *     this if the firmware invokes pkt_ctm_get_credits() or
+ *     pkt_ctm_alloc() with the 'replenish_credits' argument as non-zero.
+ *      pkt_ctm_poll_pe_credit(&my_credits);
  *
  *  6. Free CTM packets (using pkt_num from stage 4).
  *      pkt_ctm_free(isl_num, pkt_num);
@@ -846,14 +884,15 @@ __intrinsic void pkt_nbi_drop_seq(unsigned char isl, unsigned int pnum,
  * @param isl   Island of the CTM packet
  * @param pnum  Packet number of the CTM packet
  */
-__intrinsic void pkt_ctm_free(unsigned char isl, unsigned int pnum);
+__intrinsic void pkt_ctm_free(unsigned int isl, unsigned int pnum);
 
 /**
  * Allocate a CTM packet buffer.
- * @param credits         Credits management struct
- * @param isl             Island of the CTM packet
- * @param size            CTM buffer size (PKT_CTM_SIZE_*)
- * @param alloc_internal  If credits are to be allocated internally
+ * @param credits           Credits management struct
+ * @param isl               Island of the CTM packet
+ * @param size              CTM buffer size (PKT_CTM_SIZE_*)
+ * @param alloc_internal    If credits are to be allocated internally
+ * @param replenish_credits Try and replenish credits internally
  * @return the allocated packet number on success, 0xffffffff on failure
  *
  * If the "alloc_internal" param is 0 - this function does not check for
@@ -880,7 +919,8 @@ __intrinsic void pkt_ctm_free(unsigned char isl, unsigned int pnum);
 __intrinsic unsigned int pkt_ctm_alloc(__cls struct ctm_pkt_credits *credits,
                                        unsigned char isl,
                                        enum PKT_CTM_SIZE size,
-                                       unsigned char alloc_internal);
+                                       unsigned char alloc_internal,
+                                       int replenish_credits);
 
 /**
  * Initialise the credit management structure.
@@ -908,8 +948,9 @@ __intrinsic void pkt_ctm_poll_pe_credit(__cls struct ctm_pkt_credits *credits);
 
 /**
  * Get credits for allocation of packet(s) in CTM.
- * @param pkt_credits   Desired amount of packet credits
- * @param buf_credits   Desired amount of buffer credits
+ * @param pkt_credits       Desired amount of packet credits
+ * @param buf_credits       Desired amount of buffer credits
+ * @param replenish_credits Try and replenish credits internally
  *
  * This function gets credits from the credits mangment structure
  * in a safe way.
@@ -917,7 +958,8 @@ __intrinsic void pkt_ctm_poll_pe_credit(__cls struct ctm_pkt_credits *credits);
  */
 __intrinsic void pkt_ctm_get_credits(__cls struct ctm_pkt_credits *credits,
                                      unsigned int pkt_credits,
-                                     unsigned int buf_credits);
+                                     unsigned int buf_credits,
+                                     int replenish_credits);
 
 #endif /* __NFP_LANG_MICROC */
 

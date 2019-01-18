@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2015-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,28 +36,17 @@
 
 #include "pkt_count.h"
 
-#ifndef NBI
-#define NBI 0
-#endif
+#include "config.h"
 
-#define MAC_CHAN_PER_PORT   8
-#define TMQ_PER_PORT        (MAC_CHAN_PER_PORT * 8)
-
-#define MAC_TO_PORT(x)      (x / MAC_CHAN_PER_PORT)
-#define PORT_TO_TMQ(x)      (x * TMQ_PER_PORT)
-
-#ifndef PKT_NBI_OFFSET
-#define PKT_NBI_OFFSET 64
-#endif
 
 /* Counters */
-__export __dram struct pkt_cnt_if cntrs_if0;
-__export __dram struct pkt_cnt_if cntrs_if1;
+__export __emem struct pkt_cnt_if cntrs_if0;
+__export __emem struct pkt_cnt_if cntrs_if1;
 
 __intrinsic void
-proc_rx(__addr40 char *pbuf, int pkt_off, int port)
+proc_rx(__mem40 char *pbuf, int pkt_off, int port)
 {
-    __mem struct pkt_cnt_if *cntrs;
+    __mem40 struct pkt_cnt_if *cntrs;
 
     if (port == 0)
         cntrs = &cntrs_if0;
@@ -71,7 +60,7 @@ int
 main(void)
 {
     __gpr struct pkt_ms_info msi;
-    __addr40 char *pbuf;
+    __mem40 char *pbuf;
     __xread struct nbi_meta_catamaran nbi_meta;
     __xread struct nbi_meta_pkt_info *pi = &nbi_meta.pkt_info;
 
@@ -104,9 +93,13 @@ main(void)
 
         pkt_off -= 4;
         msi = pkt_msd_write(pbuf, pkt_off);
-        out_port = (in_port) ? 0 : 1;
-        pkt_nbi_send(pi->isl, pi->pnum, &msi, pi->len - MAC_PREPEND_BYTES + 4,
-                     NBI, PORT_TO_TMQ(out_port),
+        out_port = (in_port) ? 0 : 4;
+        pkt_nbi_send(pi->isl,
+                     pi->pnum,
+                     &msi,
+                     pi->len - MAC_PREPEND_BYTES + 4,
+                     NBI,
+                     PORT_TO_TMQ(out_port),
                      nbi_meta.seqr, nbi_meta.seq, PKT_CTM_SIZE_256);
     }
 

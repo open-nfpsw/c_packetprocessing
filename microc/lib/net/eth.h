@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2012-2017,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 
 #ifndef _NET_ETH_H_
 #define _NET_ETH_H_
+
 
 /**
  * Header length definitions
@@ -80,6 +81,7 @@
 
 #include <nfp.h>
 #include <stdint.h>
+#include <assert.h>
 
 /**
  * Ethernet header structure
@@ -119,24 +121,90 @@ __packed struct eth_vlan_hdr {
  */
 
 /**
- * Check if a Ethernet address is a unicast address.
+ * Check if Ethernet address is Multicast
+ * @param _a    pointer for buffer containing Ethernet address to be evaluated
+ * @ return     True or False
+ *
+ * NOTE: This also returns True for Broadcast as well.
  */
-#define NET_ETH_IS_UC_ADDR(_a) \
-    ((((struct eth_addr *)_a)->a[0] & NET_ETH_GROUP_ADDR) == 0)
+__intrinsic static int
+net_eth_is_mc_addr(void *_a)
+{
+    int is_mc_addr;
+    ctassert(__is_in_reg_or_lmem(_a));
+    if (__is_in_lmem(_a)) {
+        is_mc_addr = (((__lmem struct eth_addr *)_a)->a[0] &
+                      NET_ETH_GROUP_ADDR);
+    } else {
+        is_mc_addr = (((__gpr struct eth_addr *)_a)->a[0] &
+                      NET_ETH_GROUP_ADDR);
+    }
+    return is_mc_addr;
+}
 
 /**
- * Check if a Ethernet address is a broadcast address.
+ * Check if Ethernet address is Broadcast
+ * @param _a    pointer for buffer containing Ethernet address to be evaluated
+ * @ return     True or False
+ *
  */
-#define NET_ETH_IS_BC_ADDR(_a) \
-    (((uint16_t *)_a)[0] == 0xFFFF && \
-     ((uint16_t *)_a)[1] == 0xFFFF && \
-     ((uint16_t *)_a)[2] == 0xFFFF)
+__intrinsic static int
+net_eth_is_bc_addr(void *_a)
+{
+    int is_bc_addr;
+    ctassert(__is_in_reg_or_lmem(_a));
+    if (__is_in_lmem(_a)) {
+        is_bc_addr = (((__lmem uint16_t *)_a)[0] == 0xFFFF &&
+                      ((__lmem uint16_t *)_a)[1] == 0xFFFF &&
+                      ((__lmem uint16_t *)_a)[2] == 0xFFFF);
+    } else {
+        is_bc_addr = (((__gpr uint16_t *)_a)[0] == 0xFFFF &&
+                      ((__gpr uint16_t *)_a)[1] == 0xFFFF &&
+                      ((__gpr uint16_t *)_a)[2] == 0xFFFF);
+    }
+    return is_bc_addr;
+}
 
 /**
- * Check if a Ethernet address is a multicast address.
+ * Check if Ethernet address is Unicast
+ * @param _a    pointer for buffer containing Ethernet address to be evaluated
+ * @ return     True or False
+ *
  */
-#define NET_ETH_IS_MC_ADDR(_a) \
-    (((struct eth_addr *)_a)->a[0] & NET_ETH_GROUP_ADDR)
+__intrinsic static int
+net_eth_is_uc_addr(void *_a)
+{
+    int is_uc_addr;
+    ctassert(__is_in_reg_or_lmem(_a));
+    if (__is_in_lmem(_a)) {
+        is_uc_addr = ((((__lmem struct eth_addr *)_a)->a[0] &
+                       NET_ETH_GROUP_ADDR) == 0);
+    } else {
+        is_uc_addr = ((((__gpr struct eth_addr *)_a)->a[0] &
+                       NET_ETH_GROUP_ADDR) == 0);
+    }
+    return is_uc_addr;
+}
+
+/**
+ * Copy eth addr from source to dest
+ *
+ * @param d destination MAC addr
+ * @param s source MAC addr
+ */
+__intrinsic static void
+net_eth_cp_addr(void *d, void *s)
+{
+    ctassert(__is_in_reg_or_lmem(d));
+    ctassert(__is_in_reg_or_lmem(s));
+    if (__is_in_lmem(s)) {
+        ctassert(__is_in_lmem(d));
+        *(__lmem struct eth_addr *)d = *(__lmem struct eth_addr *)s;
+    } else {
+        ctassert(__is_in_reg(d));
+        *(__gpr struct eth_addr *)d = *(__gpr struct eth_addr *)s;
+    }
+}
 
 #endif /* MicroC code */
 

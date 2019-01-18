@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright 2015-2018 Netronome, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,11 +161,11 @@ ones_sum_warr(__xread uint32_t *buf, uint32_t len)
 /* computes the checksum over a memory region */
 /* len can be arbitrary */
 __intrinsic uint32_t
-ones_sum_mem(__addr40 void *mem, int32_t len)
+ones_sum_mem(__mem40 void *mem, int32_t len)
 {
     __xread uint32_t pkt_cache[16];
     __gpr int curr_len;
-    __addr40 void* pkt_ptr;
+    __mem40 void* pkt_ptr;
     SIGNAL read_sig;
     __gpr uint32_t sum = 0;
 
@@ -181,7 +181,7 @@ ones_sum_mem(__addr40 void *mem, int32_t len)
                          sizeof(pkt_cache), ctx_swap, &read_sig);
             sum = ones_sum_add(sum, ones_sum_warr(pkt_cache, curr_len));
             __implicit_read(pkt_cache);
-            ((__addr40 uint8_t*)pkt_ptr) += curr_len;
+            ((__mem40 uint8_t*)pkt_ptr) += curr_len;
             len -= curr_len;
         }
     }
@@ -199,7 +199,13 @@ net_csum_mod(uint32_t orig_csum, uint32_t orig_val, uint32_t new_val)
 }
 
 __intrinsic uint16_t
-net_csum_ipv4(void *ip, __addr40 void *pkt_ptr)
+net_csum_ipv4(void *ip, __mem40 void *pkt_ptr)
+{
+    return __net_csum_ipv4(ip, pkt_ptr, 1);
+}
+
+__intrinsic uint16_t
+__net_csum_ipv4(void *ip, __mem40 void *pkt_ptr,  const uint32_t test_ip_opt)
 {
     __gpr uint32_t sum = 0;
     __gpr uint32_t opt_size;
@@ -208,6 +214,7 @@ net_csum_ipv4(void *ip, __addr40 void *pkt_ptr)
     SIGNAL read_sig;
 
     ctassert(__is_in_reg_or_lmem(ip));
+    ctassert(__is_ct_const(test_ip_opt));
 
     /* Sum up the standard IP header */
     sum = ones_sum_add(sum, UINT32_REG(ip)[0]);
@@ -223,24 +230,26 @@ net_csum_ipv4(void *ip, __addr40 void *pkt_ptr)
         hl = ((__gpr struct ip4_hdr *)ip)->hl;
     }
 
-    if(hl > NET_IP4_LEN32) {
-        opt_size = (hl - NET_IP4_LEN32) * sizeof(uint32_t);
-        ((__addr40 uint8_t*)pkt_ptr) -= opt_size;
-        /* The read size must be a mult of 8 bytes */
-        __mem_read64(ip_opts, pkt_ptr, ((opt_size + 7) & 0x78),
-                     sizeof(ip_opts), ctx_swap, &read_sig);
-        sum = ones_sum_add(sum, ones_sum_warr(ip_opts, opt_size));
-        __implicit_read(ip_opts);
+    if (test_ip_opt) {
+        if (hl > NET_IP4_LEN32) {
+            opt_size = (hl - NET_IP4_LEN32) * sizeof(uint32_t);
+            ((__mem40 uint8_t*)pkt_ptr) -= opt_size;
+            /* The read size must be a mult of 8 bytes */
+            __mem_read64(ip_opts, pkt_ptr, ((opt_size + 7) & 0x78),
+                         sizeof(ip_opts), ctx_swap, &read_sig);
+            sum = ones_sum_add(sum, ones_sum_warr(ip_opts, opt_size));
+            __implicit_read(ip_opts);
+        }
     }
 
     return ~ones_sum_fold16(sum);
 }
 
-static __intrinsic uint16_t
+__intrinsic uint16_t
 net_csum_l4_ip(uint32_t ip_type, uint32_t protocol,
                void *ip, void *l4_hdr,
-               __addr40 void* pkt_ctm, uint32_t ctm_len,
-               __addr40 void* pkt_mem, uint32_t mem_len)
+               __mem40 void* pkt_ctm, uint32_t ctm_len,
+               __mem40 void* pkt_mem, uint32_t mem_len)
 {
     __gpr uint32_t sum = 0;
     __gpr uint32_t tmp;
@@ -258,10 +267,10 @@ net_csum_l4_ip(uint32_t ip_type, uint32_t protocol,
         /* Skip UDP header */
         if (ctm_len > 0) {
             ctm_len -= sizeof(struct udp_hdr);
-            ((__addr40 uint8_t*)pkt_ctm) += sizeof(struct udp_hdr);
+            ((__mem40 uint8_t*)pkt_ctm) += sizeof(struct udp_hdr);
         } else {
             mem_len -= sizeof(struct udp_hdr);
-            ((__addr40 uint8_t*)pkt_mem) += sizeof(struct udp_hdr);
+            ((__mem40 uint8_t*)pkt_mem) += sizeof(struct udp_hdr);
         }
     } else {
         l4_len = ctm_len + mem_len;
@@ -269,10 +278,10 @@ net_csum_l4_ip(uint32_t ip_type, uint32_t protocol,
         /* Skip basic TCP header */
         if (ctm_len > 0) {
             ctm_len -= sizeof(struct tcp_hdr);
-            ((__addr40 uint8_t*)pkt_ctm) += sizeof(struct tcp_hdr);
+            ((__mem40 uint8_t*)pkt_ctm) += sizeof(struct tcp_hdr);
         } else {
             mem_len -= sizeof(struct tcp_hdr);
-            ((__addr40 uint8_t*)pkt_mem) += sizeof(struct tcp_hdr);
+            ((__mem40 uint8_t*)pkt_mem) += sizeof(struct tcp_hdr);
         }
     }
 
@@ -288,8 +297,8 @@ net_csum_l4_ip(uint32_t ip_type, uint32_t protocol,
 
 __intrinsic uint16_t
 net_csum_ipv4_udp(void *ip, void* udp,
-                  __addr40 void* pkt_ctm, uint32_t ctm_len,
-                  __addr40 void* pkt_mem, uint32_t mem_len)
+                  __mem40 void* pkt_ctm, uint32_t ctm_len,
+                  __mem40 void* pkt_mem, uint32_t mem_len)
 {
     ctassert(__is_in_reg_or_lmem(ip));
     ctassert(__is_in_reg_or_lmem(udp));
@@ -300,8 +309,8 @@ net_csum_ipv4_udp(void *ip, void* udp,
 
 __intrinsic uint16_t
 net_csum_ipv4_tcp(void *ip, void* tcp,
-                  __addr40 void* pkt_ctm, uint32_t ctm_len,
-                  __addr40 void* pkt_mem, uint32_t mem_len)
+                  __mem40 void* pkt_ctm, uint32_t ctm_len,
+                  __mem40 void* pkt_mem, uint32_t mem_len)
 {
     ctassert(__is_in_reg_or_lmem(ip));
     ctassert(__is_in_reg_or_lmem(tcp));
@@ -312,8 +321,8 @@ net_csum_ipv4_tcp(void *ip, void* tcp,
 
 __intrinsic uint16_t
 net_csum_ipv6_udp(void *ip, void *udp,
-                  __addr40 void *pkt_ctm, uint32_t ctm_len,
-                  __addr40 void *pkt_mem, uint32_t mem_len)
+                  __mem40 void *pkt_ctm, uint32_t ctm_len,
+                  __mem40 void *pkt_mem, uint32_t mem_len)
 {
     ctassert(__is_in_reg_or_lmem(ip));
     ctassert(__is_in_reg_or_lmem(udp));
@@ -324,8 +333,8 @@ net_csum_ipv6_udp(void *ip, void *udp,
 
 __intrinsic uint16_t
 net_csum_ipv6_tcp(void *ip, void *tcp,
-                  __addr40 void *pkt_ctm, uint32_t ctm_len,
-                  __addr40 void *pkt_mem, uint32_t mem_len)
+                  __mem40 void *pkt_ctm, uint32_t ctm_len,
+                  __mem40 void *pkt_mem, uint32_t mem_len)
 {
     ctassert(__is_in_reg_or_lmem(ip));
     ctassert(__is_in_reg_or_lmem(tcp));

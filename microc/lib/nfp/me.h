@@ -141,6 +141,29 @@ __intrinsic unsigned int ffs(unsigned int data);
  */
 __intrinsic int ffs64(unsigned long long int data);
 
+
+/**
+ * Rotate a 32-bit value right
+ *
+ * @param val           The value to be rotated
+ * @param amt           The number of bits to rotate
+ *
+ * The rotational amount is taken to be amt % 32.
+ */
+__intrinsic unsigned int rotr32(unsigned int val, unsigned int amt);
+
+
+/**
+ * Rotate a 32-bit value left
+ *
+ * @param val           The value to be rotated
+ * @param amt           The the number of bits to rotate
+ *
+ * The rotational amount is taken to be amt % 32.
+ */
+__intrinsic unsigned int rotl32(unsigned int val, unsigned int amt);
+
+
 /**
  * CRC bytes specifier
  *

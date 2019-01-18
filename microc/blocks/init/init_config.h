@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2014-2017,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,31 @@
     #define NBI_PKT_PREPEND_BYTES 0
 #endif
 
+/* The starting offset of the packet data in CTM */
+#ifndef PKT_NBI_OFFSET
+    #define PKT_NBI_OFFSET 64
+#endif
+
+#if (__REVISION_MIN == __REVISION_A0)
+    #if (PKT_NBI_OFFSET == 32)
+        #define CTM_OFFSET 0
+    #elif (PKT_NBI_OFFSET == 64)
+        #define CTM_OFFSET 1
+    #else
+        #error "Invalid PKT_NBI_OFFSET must be 32 or 64"
+    #endif
+#elif (__REVISION_MIN == __REVISION_B0)
+    #if (PKT_NBI_OFFSET == 64)
+        #define CTM_OFFSET 1
+    #elif (PKT_NBI_OFFSET == 128)
+        #define CTM_OFFSET 0
+    #else
+        #error "Invalid PKT_NBI_OFFSET must be 64 or 128"
+    #endif
+#else
+    #error "Invalid CHIP REVISION"
+#endif
+
 /* Maxmimum split length boundary between a packets CTM buffer and it's backing
  * IMEM/EMEM buffer:
  * 0 - Split at 256B boundary
@@ -67,6 +92,34 @@
  * frames when buffers are full */
 #ifndef NBI_DMA_BP_DROP_ENABLE
     #define NBI_DMA_BP_DROP_ENABLE 0
+#endif
+
+/* Define this to disable/enable the NBI DMA Buffer Pool drop behavior on a
+ * per-Buffer Pool basis; otherwise, the global NBI DMA Buffer Pool drop
+ * behavior will be used by default. */
+#ifndef NBI_DMA_BP0_DROP_ENABLE
+    #define NBI_DMA_BP0_DROP_ENABLE NBI_DMA_BP_DROP_ENABLE
+#endif
+#ifndef NBI_DMA_BP1_DROP_ENABLE
+    #define NBI_DMA_BP1_DROP_ENABLE NBI_DMA_BP_DROP_ENABLE
+#endif
+#ifndef NBI_DMA_BP2_DROP_ENABLE
+    #define NBI_DMA_BP2_DROP_ENABLE NBI_DMA_BP_DROP_ENABLE
+#endif
+#ifndef NBI_DMA_BP3_DROP_ENABLE
+    #define NBI_DMA_BP3_DROP_ENABLE NBI_DMA_BP_DROP_ENABLE
+#endif
+#ifndef NBI_DMA_BP4_DROP_ENABLE
+    #define NBI_DMA_BP4_DROP_ENABLE NBI_DMA_BP_DROP_ENABLE
+#endif
+#ifndef NBI_DMA_BP5_DROP_ENABLE
+    #define NBI_DMA_BP5_DROP_ENABLE NBI_DMA_BP_DROP_ENABLE
+#endif
+#ifndef NBI_DMA_BP6_DROP_ENABLE
+    #define NBI_DMA_BP6_DROP_ENABLE NBI_DMA_BP_DROP_ENABLE
+#endif
+#ifndef NBI_DMA_BP7_DROP_ENABLE
+    #define NBI_DMA_BP7_DROP_ENABLE NBI_DMA_BP_DROP_ENABLE
 #endif
 
 /* The allocation of Primary and Secondary Buffer List Queues targets amongst
@@ -160,15 +213,6 @@
  *
  ************************************************************************/
 
-/* Number of TM Queues to be used in each half of the total 1024 available
- * TM Queues.
- * Having each half at 512 will cause all 1024 to be enabled, and each Queue
- * will be of size 16 entries.*/
-#ifndef NBI_TM_H_0_Q
-    #define NBI_TM_H_0_Q 512
-    #define NBI_TM_H_1_Q 512
-#endif
-
 /* Packet Sequencing/Ordering.
  *
  * Options:
@@ -209,5 +253,516 @@
     #define NBI_TM_L1_INPUT_SELECT 1
 #endif
 
+/* Check if specifying number of queues for each half of NBI TM */
+#ifdef NBI_TM_H_0_Q
+
+    /* Make sure number of queues is valid */
+    #if (NBI_TM_H_0_Q > 64)
+        #if ((NBI_TM_CHANNEL_LEVEL_SELECT == 1) && (NBI_TM_L1_INPUT_SELECT == 0))
+            #error "Can't use more then 64 queues in first half of TM when ChannelLevelSelect=0 and L1InputSelect=0"
+        #elif (NBI_TM_H_0_Q > 512)
+            #error "Number of queues in first half of TM cannot be greater than 512"
+        #endif
+    #endif
+    #if (NBI_TM_H_1_Q > 64)
+        #if ((NBI_TM_CHANNEL_LEVEL_SELECT == 1) && (NBI_TM_L1_INPUT_SELECT == 0))
+            #error "Can't use more then 64 queues in second half of TM when ChannelLevelSelect=0 and L1InputSelect=0"
+        #elif (NBI_TM_H_1_Q > 512)
+            #error "Number of queues in second half of TM cannot be greater than 512"
+        #endif
+    #endif
+
+    /* Evenly split queue space amongst all queues configured */
+    #if ((NBI_TM_H_0_Q + NBI_TM_H_1_Q) <= 4)
+        #define NBI_TM_Q_CFG_QSIZE 12
+    #else
+        #define NBI_TM_Q_CFG_QSIZE                              \
+            (LOG2((16384 / (NBI_TM_H_0_Q + NBI_TM_H_1_Q)), -1))
+    #endif
+
+    #define NBI0_TM_Q_CFG_RANGE0 1,0,(NBI_TM_H_0_Q - 1),NBI_TM_Q_CFG_QSIZE
+    #if (NBI_TM_H_1_Q > 0)
+        #if ((NBI_TM_CHANNEL_LEVEL_SELECT == 1) && (NBI_TM_L1_INPUT_SELECT == 0))
+            #define NBI0_TM_Q_CFG_RANGE1                   \
+                1,64,(NBI_TM_H_1_Q - 1),NBI_TM_Q_CFG_QSIZE
+        #else
+            #define NBI0_TM_Q_CFG_RANGE1                    \
+                1,512,(NBI_TM_H_1_Q - 1),NBI_TM_Q_CFG_QSIZE
+        #endif
+    #endif
+
+    #if NBI_COUNT == 2
+        #define NBI1_TM_Q_CFG_RANGE0 1,0,(NBI_TM_H_0_Q - 1),NBI_TM_Q_CFG_QSIZE
+        #if (NBI_TM_H_1_Q > 0)
+            #if ((NBI_TM_CHANNEL_LEVEL_SELECT == 1) && (NBI_TM_L1_INPUT_SELECT == 0))
+                #define NBI1_TM_Q_CFG_RANGE1                   \
+                    1,64,(NBI_TM_H_1_Q - 1),NBI_TM_Q_CFG_QSIZE
+            #else
+                #define NBI1_TM_Q_CFG_RANGE1                    \
+                    1,512,(NBI_TM_H_1_Q - 1),NBI_TM_Q_CFG_QSIZE
+            #endif
+        #endif
+    #endif
+
+#endif
+
+
+/* Make sure each TM queue config range is defined, even if unused.
+ * Note: Default value is to have all queues active w/ 2^4 entries
+ */
+#ifndef NBI0_TM_Q_CFG_RANGE0
+    #if ((NBI_TM_CHANNEL_LEVEL_SELECT == 1) && (NBI_TM_L1_INPUT_SELECT == 0))
+        #define NBI0_TM_Q_CFG_RANGE0  1,0,127,7
+    #else
+        #define NBI0_TM_Q_CFG_RANGE0  1,0,1023,4
+    #endif
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE1
+#define NBI0_TM_Q_CFG_RANGE1  0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE2
+#define NBI0_TM_Q_CFG_RANGE2  0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE3
+#define NBI0_TM_Q_CFG_RANGE3  0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE4
+#define NBI0_TM_Q_CFG_RANGE4  0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE5
+#define NBI0_TM_Q_CFG_RANGE5  0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE6
+#define NBI0_TM_Q_CFG_RANGE6  0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE7
+#define NBI0_TM_Q_CFG_RANGE7  0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE8
+#define NBI0_TM_Q_CFG_RANGE8  0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE9
+#define NBI0_TM_Q_CFG_RANGE9  0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE10
+#define NBI0_TM_Q_CFG_RANGE10 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE11
+#define NBI0_TM_Q_CFG_RANGE11 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE12
+#define NBI0_TM_Q_CFG_RANGE12 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE13
+#define NBI0_TM_Q_CFG_RANGE13 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE14
+#define NBI0_TM_Q_CFG_RANGE14 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE15
+#define NBI0_TM_Q_CFG_RANGE15 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE16
+#define NBI0_TM_Q_CFG_RANGE16 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE17
+#define NBI0_TM_Q_CFG_RANGE17 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE18
+#define NBI0_TM_Q_CFG_RANGE18 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE19
+#define NBI0_TM_Q_CFG_RANGE19 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE20
+#define NBI0_TM_Q_CFG_RANGE20 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE21
+#define NBI0_TM_Q_CFG_RANGE21 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE22
+#define NBI0_TM_Q_CFG_RANGE22 0,0,0,0
+#endif
+#ifndef NBI0_TM_Q_CFG_RANGE23
+#define NBI0_TM_Q_CFG_RANGE23 0,0,0,0
+#endif
+
+#if NBI_COUNT == 2
+    #ifndef NBI1_TM_Q_CFG_RANGE0
+        #if ((NBI_TM_CHANNEL_LEVEL_SELECT == 1) && \
+             (NBI_TM_L1_INPUT_SELECT == 0))
+            #define NBI1_TM_Q_CFG_RANGE0  1,0,127,7
+        #else
+            #define NBI1_TM_Q_CFG_RANGE0  1,0,1023,4
+        #endif
+    #endif
+#elif !defined(NBI1_TM_Q_CFG_RANGE0)
+#define NBI1_TM_Q_CFG_RANGE0  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE1
+#define NBI1_TM_Q_CFG_RANGE1  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE2
+#define NBI1_TM_Q_CFG_RANGE2  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE3
+#define NBI1_TM_Q_CFG_RANGE3  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE4
+#define NBI1_TM_Q_CFG_RANGE4  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE5
+#define NBI1_TM_Q_CFG_RANGE5  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE6
+#define NBI1_TM_Q_CFG_RANGE6  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE7
+#define NBI1_TM_Q_CFG_RANGE7  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE8
+#define NBI1_TM_Q_CFG_RANGE8  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE9
+#define NBI1_TM_Q_CFG_RANGE9  0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE10
+#define NBI1_TM_Q_CFG_RANGE10 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE11
+#define NBI1_TM_Q_CFG_RANGE11 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE12
+#define NBI1_TM_Q_CFG_RANGE12 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE13
+#define NBI1_TM_Q_CFG_RANGE13 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE14
+#define NBI1_TM_Q_CFG_RANGE14 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE15
+#define NBI1_TM_Q_CFG_RANGE15 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE16
+#define NBI1_TM_Q_CFG_RANGE16 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE17
+#define NBI1_TM_Q_CFG_RANGE17 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE18
+#define NBI1_TM_Q_CFG_RANGE18 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE19
+#define NBI1_TM_Q_CFG_RANGE19 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE20
+#define NBI1_TM_Q_CFG_RANGE20 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE21
+#define NBI1_TM_Q_CFG_RANGE21 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE22
+#define NBI1_TM_Q_CFG_RANGE22 0,0,0,0
+#endif
+#ifndef NBI1_TM_Q_CFG_RANGE23
+#define NBI1_TM_Q_CFG_RANGE23 0,0,0,0
+#endif
+
+
+/* Make sure each TM shaper config range is defined, even if unused.
+ * Note: Default value is to have all shapers disabled
+ */
+#ifndef NBI0_TM_SHAPER_CFG_RANGE0
+#define NBI0_TM_SHAPER_CFG_RANGE0  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE1
+#define NBI0_TM_SHAPER_CFG_RANGE1  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE2
+#define NBI0_TM_SHAPER_CFG_RANGE2  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE3
+#define NBI0_TM_SHAPER_CFG_RANGE3  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE4
+#define NBI0_TM_SHAPER_CFG_RANGE4  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE5
+#define NBI0_TM_SHAPER_CFG_RANGE5  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE6
+#define NBI0_TM_SHAPER_CFG_RANGE6  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE7
+#define NBI0_TM_SHAPER_CFG_RANGE7  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE8
+#define NBI0_TM_SHAPER_CFG_RANGE8  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE9
+#define NBI0_TM_SHAPER_CFG_RANGE9  0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE10
+#define NBI0_TM_SHAPER_CFG_RANGE10 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE11
+#define NBI0_TM_SHAPER_CFG_RANGE11 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE12
+#define NBI0_TM_SHAPER_CFG_RANGE12 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE13
+#define NBI0_TM_SHAPER_CFG_RANGE13 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE14
+#define NBI0_TM_SHAPER_CFG_RANGE14 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE15
+#define NBI0_TM_SHAPER_CFG_RANGE15 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE16
+#define NBI0_TM_SHAPER_CFG_RANGE16 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE17
+#define NBI0_TM_SHAPER_CFG_RANGE17 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE18
+#define NBI0_TM_SHAPER_CFG_RANGE18 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE19
+#define NBI0_TM_SHAPER_CFG_RANGE19 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE20
+#define NBI0_TM_SHAPER_CFG_RANGE20 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE21
+#define NBI0_TM_SHAPER_CFG_RANGE21 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE22
+#define NBI0_TM_SHAPER_CFG_RANGE22 0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_SHAPER_CFG_RANGE23
+#define NBI0_TM_SHAPER_CFG_RANGE23 0,0,0,0,0,0,0
+#endif
+
+#ifndef NBI1_TM_SHAPER_CFG_RANGE0
+#define NBI1_TM_SHAPER_CFG_RANGE0  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE1
+#define NBI1_TM_SHAPER_CFG_RANGE1  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE2
+#define NBI1_TM_SHAPER_CFG_RANGE2  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE3
+#define NBI1_TM_SHAPER_CFG_RANGE3  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE4
+#define NBI1_TM_SHAPER_CFG_RANGE4  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE5
+#define NBI1_TM_SHAPER_CFG_RANGE5  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE6
+#define NBI1_TM_SHAPER_CFG_RANGE6  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE7
+#define NBI1_TM_SHAPER_CFG_RANGE7  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE8
+#define NBI1_TM_SHAPER_CFG_RANGE8  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE9
+#define NBI1_TM_SHAPER_CFG_RANGE9  0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE10
+#define NBI1_TM_SHAPER_CFG_RANGE10 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE11
+#define NBI1_TM_SHAPER_CFG_RANGE11 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE12
+#define NBI1_TM_SHAPER_CFG_RANGE12 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE13
+#define NBI1_TM_SHAPER_CFG_RANGE13 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE14
+#define NBI1_TM_SHAPER_CFG_RANGE14 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE15
+#define NBI1_TM_SHAPER_CFG_RANGE15 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE16
+#define NBI1_TM_SHAPER_CFG_RANGE16 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE17
+#define NBI1_TM_SHAPER_CFG_RANGE17 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE18
+#define NBI1_TM_SHAPER_CFG_RANGE18 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE19
+#define NBI1_TM_SHAPER_CFG_RANGE19 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE20
+#define NBI1_TM_SHAPER_CFG_RANGE20 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE21
+#define NBI1_TM_SHAPER_CFG_RANGE21 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE22
+#define NBI1_TM_SHAPER_CFG_RANGE22 0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_SHAPER_CFG_RANGE23
+#define NBI1_TM_SHAPER_CFG_RANGE23 0,0,0,0,0,0,0
+#endif
+
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE0
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE0 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE1
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE1 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE2
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE2 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE3
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE3 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE4
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE4 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE5
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE5 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE6
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE6 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE7
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE7 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE8
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE8 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE9
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE9 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE10
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE10 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE11
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE11 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE12
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE12 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE13
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE13 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE14
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE14 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE15
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE15 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE16
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE16 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE17
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE17 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE18
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE18 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE19
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE19 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE20
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE20 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE21
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE21 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE22
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE22 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI0_TM_L2L1_SCHED_CFG_RANGE23
+#define NBI0_TM_L2L1_SCHED_CFG_RANGE23 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE0
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE0 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE1
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE1 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE2
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE2 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE3
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE3 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE4
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE4 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE5
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE5 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE6
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE6 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE7
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE7 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE8
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE8 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE9
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE9 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE10
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE10 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE11
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE11 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE12
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE12 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE13
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE13 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE14
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE14 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE15
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE15 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE16
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE16 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE17
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE17 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE18
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE18 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE19
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE19 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE20
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE20 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE21
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE21 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE22
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE22 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
+#ifndef NBI1_TM_L2L1_SCHED_CFG_RANGE23
+#define NBI1_TM_L2L1_SCHED_CFG_RANGE23 0,0,0,0,0,0,0,0,0,0,0,0,0,0
+#endif
 
 #endif /* _INIT_CONFIG_H_ */

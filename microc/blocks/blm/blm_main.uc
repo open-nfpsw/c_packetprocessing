@@ -22,12 +22,15 @@
 
 #include <aggregate.uc>
 #include <nfp_chipres.h>
+
 #include <ring_utils.uc>
-#include "event_autopush.uc"
-#include "blm_nbi.uc"
-#include "libblm_pkt_fl.uc"
-#include "libblm.h"
-#include "blm.h"
+#include <event_autopush.uc>
+
+#include "_h/blm_uc.h"
+#include "_h/blm_internal.h"
+
+#include "_uc/blm_nbi.uc"
+#include "blm_api.uc"
 
 
 #ifndef ALARM_TICKS
@@ -44,11 +47,11 @@
 /* Mem Reserved for BLM use */
 .alloc_mem BLM_INFO_SECTION_BASE        i0.ctm                 island   64 8
 #ifdef NULL_RECYCLE_FROM_EMU
-    .alloc_mem BLM_INGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID/**/    i24.emem             global  128 64
-    .alloc_mem BLM_EGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID/**/     i24.emem             global  128 64
+    .alloc_mem BLM_INGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID    i24.emem             global  128 64
+    .alloc_mem BLM_EGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID     i24.emem             global  128 64
 #else
-    .alloc_mem BLM_INGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID/**/    i0.ctm                 island  128 8
-    .alloc_mem BLM_EGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID/**/     i0.ctm                 island  128 8
+    .alloc_mem BLM_INGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID    i0.ctm                 island  128 8
+    .alloc_mem BLM_EGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID     i0.ctm                 island  128 8
 #endif
 
 /* Allocate BLM Stats memory for 4 BLQ's in each BLM instance Island. */
@@ -91,9 +94,11 @@
         #define BLM_BLQ_OP_MODE     BLM_BLQ_SPLIT_MODE
 
         /* Allocate CTM Cache memory for 2 BLQ's in each BLM instance Island. */
-        #for id [CTM_NBI_BLQ0_CACHE_BASE, CTM_NBI_BLQ1_CACHE_BASE]
-            .alloc_mem id        i0.ctm                 island  BLQ_CACHE_SIZE 8
-        #endloop
+		#for id [0,1]
+			#define_eval __CACHE_ID     BLM_NBI_BLQ/**/id/**/_CACHE_BASE
+			#define_eval __CACHE_SIZE   (BLM_NBI_BLQ/**/id/**/_CACHE_SIZE * 4)
+			.alloc_mem __CACHE_ID        i0.ctm                 island  __CACHE_SIZE 8
+		#endloop
 
         #define BLQ_OFFSET          (BLM_INSTANCE_ID * 2)
         // Ingress Filter
@@ -111,9 +116,11 @@
     #else /* BLM_SPLIT_BLQ_MODE */
         #define BLM_BLQ_OP_MODE     BLM_BLQ_NON_SPLIT_MODE
         /* Allocate CTM Cache memory for all BLQ's */
-        #for id [CTM_NBI_BLQ0_CACHE_BASE, CTM_NBI_BLQ1_CACHE_BASE, CTM_NBI_BLQ2_CACHE_BASE, CTM_NBI_BLQ3_CACHE_BASE]
-            .alloc_mem id        i0.ctm                 island  BLQ_CACHE_SIZE 8
-        #endloop
+		#for id [0,1,2,3]
+			#define_eval __CACHE_ID     BLM_NBI_BLQ/**/id/**/_CACHE_BASE
+			#define_eval __CACHE_SIZE   (BLM_NBI_BLQ/**/id/**/_CACHE_SIZE * 4)
+			.alloc_mem __CACHE_ID        i0.ctm                 island  __CACHE_SIZE 8
+		#endloop
 
         // Ingress Filter
         #define CTX0_FILTER_MATCH   (0x5 | 0x0 <<14 | NBII <<18)
@@ -131,8 +138,10 @@
     #define BLM_NBI_MODE        BLM_SINGLE_NBI_MODE
 
     /* Allocate CTM Cache memory for all BLQ's */
-    #for id [CTM_NBI_BLQ0_CACHE_BASE, CTM_NBI_BLQ1_CACHE_BASE, CTM_NBI_BLQ2_CACHE_BASE, CTM_NBI_BLQ3_CACHE_BASE]
-        .alloc_mem id        i0.ctm                 island  BLQ_CACHE_SIZE 8
+    #for id [0,1,2,3]
+        #define_eval __CACHE_ID     BLM_NBI_BLQ/**/id/**/_CACHE_BASE
+        #define_eval __CACHE_SIZE   (BLM_NBI_BLQ/**/id/**/_CACHE_SIZE * 4)
+        .alloc_mem __CACHE_ID        i0.ctm                 island  __CACHE_SIZE 8
     #endloop
 
     /* CLS Autopush filter match per context */
@@ -148,6 +157,8 @@
     #define CTX7_FILTER_MATCH   (0x5 | 0x7 <<14 | NBII <<18)
 
 #endif /* SINGLE_NBI */
+#undef __CACHE_ID
+#undef __CACHE_SIZE
 
 #for id [BLQ0_DESC_LMEM_BASE,BLQ1_DESC_LMEM_BASE,BLQ2_DESC_LMEM_BASE,BLQ3_DESC_LMEM_BASE]
         .alloc_mem id lmem me 32 4 addr32
@@ -230,7 +241,7 @@
         .init_csr mecsr:ctx7.IndLMAddr0 BLQ3_DESC_LMEM_BASE volatile
 
         #for id [0,1,2,3]
-            .init BLQ/**/id/**/_DESC_LMEM_BASE+BLM_LM_BLQ_CACHE_ADDR_OFFSET CTM_NBI_BLQ/**/id/**/_CACHE_BASE
+            .init BLQ/**/id/**/_DESC_LMEM_BASE+BLM_LM_BLQ_CACHE_ADDR_OFFSET BLM_NBI_BLQ/**/id/**/_CACHE_BASE
             .init BLQ/**/id/**/_DESC_LMEM_BASE+BLM_LM_BLQ_CACHE_ENTRY_CNT_OFFSET 0
             .init BLQ/**/id/**/_DESC_LMEM_BASE+BLM_LM_BLQ_DMA_EVNT_PEND_CNT_OFFSET 0
         #endloop
@@ -473,8 +484,8 @@
 .begin
     .reg _addr
     .reg _offset
-    move(_addr, ((BLM_EGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID/**/ >>8) & 0xFF000000))
-    move(_offset, ((BLM_EGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID/**/) & 0xFFFFFFFF))
+    move(_addr, ((BLM_EGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID >>8) & 0xFF000000))
+    move(_offset, ((BLM_EGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID) & 0xFFFFFFFF))
     #if (__REVISION_MIN < __REVISION_B0)
         #define_eval _MAX_PULL_DATA_LEN     2
     #else
@@ -499,8 +510,8 @@
 .begin
     .reg _addr
     .reg _offset
-    move(_addr, ((BLM_INGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID/**/ >>8) & 0xFF000000))
-    move(_offset, ((BLM_INGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID/**/) & 0xFFFFFFFF))
+    move(_addr, ((BLM_INGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID >>8) & 0xFF000000))
+    move(_offset, ((BLM_INGRESS_NULL_BUF_RECYCLE_BASE_/**/BLM_INSTANCE_ID) & 0xFFFFFFFF))
     blm_push_mem2dma(NbiNum, blq, _addr, _offset, n, 1)
 .end
 #endm /* blm_ingress_null_buffer_recycle */
@@ -743,10 +754,10 @@ end_cache_fill#:
     #endif
 
     /* Setup the DMA's BLQueCtrl register */
-   .init_csr nbi:i/**/NBI_NUM/**/.NbiDmaCpp.NbiDmaBufferList.BLQueCtrl/**/BLQ_NUM/**/ (_TAIL_PTR_ | (_HEAD_PTR_ << 12) | (_SIZE_ << 36)) const
+   .init_csr nbi:i/**/NBI_NUM.NbiDmaCpp.NbiDmaBufferList.BLQueCtrl/**/BLQ_NUM (_TAIL_PTR_ | (_HEAD_PTR_ << 12) | (_SIZE_ << 36)) const
 
     /* Setup the TM's  BLQueCtrl register */
-   .init_csr nbi:i/**/NBI_NUM/**/.NBITMCPP.TMBufferList.BLQueCtrl/**/BLQ_NUM/**/ (_HEAD_PTR_ | (_HEAD_PTR_ << 12) | (_SIZE_ << 36)) const
+   .init_csr nbi:i/**/NBI_NUM.NBITMCPP.TMBufferList.BLQueCtrl/**/BLQ_NUM (_HEAD_PTR_ | (_HEAD_PTR_ << 12) | (_SIZE_ << 36)) const
 
     #undef _TAIL_PTR_
     #undef _HEAD_PTR_
@@ -771,6 +782,9 @@ end_cache_fill#:
 #macro blm_ring_fill(R_TYPE, NBI_NUM, R_SIZE, R_BASE, BUF_SIZE, \
                      IMEM0_NUM_BUFS, IMEM0_BASE, IMEM0_DENSITY, \
                      IMEM1_NUM_BUFS, IMEM1_BASE, IMEM1_DENSITY, \
+                     EMEM0_CACHE_NUM_BUFS, EMEM0_CACHE_BASE, EMEM0_CACHE_DENSITY, \
+                     EMEM1_CACHE_NUM_BUFS, EMEM1_CACHE_BASE, EMEM1_CACHE_DENSITY, \
+                     EMEM2_CACHE_NUM_BUFS, EMEM2_CACHE_BASE, EMEM2_CACHE_DENSITY, \
                      EMEM0_NUM_BUFS, EMEM0_BASE, EMEM0_DENSITY, \
                      EMEM1_NUM_BUFS, EMEM1_BASE, EMEM1_DENSITY, \
                      EMEM2_NUM_BUFS, EMEM2_BASE, EMEM2_DENSITY)
@@ -799,7 +813,9 @@ end_cache_fill#:
     #endif
 
     /* Init count can not be > (blq length + emu ring size) */
-    #if (R_SIZE < (IMEM0_NUM_BUFS+IMEM1_NUM_BUFS+EMEM0_NUM_BUFS+EMEM1_NUM_BUFS+EMEM2_NUM_BUFS))
+    #if (R_SIZE < (IMEM0_NUM_BUFS+IMEM1_NUM_BUFS+ \
+                   EMEM0_CACHE_NUM_BUFS+EMEM1_CACHE_NUM_BUFS+EMEM2_CACHE_NUM_BUFS+ \
+                   EMEM0_NUM_BUFS+EMEM1_NUM_BUFS+EMEM2_NUM_BUFS))
         #error "Ring size too small for total number of buffers"
     #endif
 
@@ -817,6 +833,30 @@ end_cache_fill#:
         #endif
         #if (IMEM1_DENSITY <= 0)
             #error "IMEM1_DENSITY can not be <= 0"
+        #endif
+    #endif
+    #if (EMEM0_CACHE_NUM_BUFS > 0)
+        #if (EMEM0_CACHE_NUM_BUFS < EMEM0_CACHE_DENSITY)
+            #error "EMEM0 Cache number of buffers ("EMEM0_CACHE_NUM_BUFS") < EMEM0 CACHE density ("EMEM0_CACHE_DENSITY")"
+        #endif
+        #if (EMEM0_CACHE_DENSITY <= 0)
+            #error "EMEM0_CACHE_DENSITY can not be <= 0"
+        #endif
+    #endif
+    #if (EMEM1_CACHE_NUM_BUFS > 0)
+        #if (EMEM1_CACHE_NUM_BUFS < EMEM1_CACHE_DENSITY)
+            #error "EMEM1 Cache number of buffers ("EMEM1_CACHE_NUM_BUFS") < EMEM1 CACHE density ("EMEM1_CACHE_DENSITY")"
+        #endif
+        #if (EMEM1_CACHE_DENSITY <= 0)
+            #error "EMEM1_CACHE_DENSITY can not be <= 0"
+        #endif
+    #endif
+    #if (EMEM2_CACHE_NUM_BUFS > 0)
+        #if (EMEM2_CACHE_NUM_BUFS < EMEM2_CACHE_DENSITY)
+            #error "EMEM2 Cache number of buffers ("EMEM2_CACHE_NUM_BUFS") < EMEM2 CACHE density ("EMEM2_CACHE_DENSITY")"
+        #endif
+        #if (EMEM2_CACHE_DENSITY <= 0)
+            #error "EMEM2_CACHE_DENSITY can not be <= 0"
         #endif
     #endif
     #if (EMEM0_NUM_BUFS > 0)
@@ -844,14 +884,25 @@ end_cache_fill#:
         #endif
     #endif
 
-    #define_eval TOTAL_BUFS_LEFT (IMEM0_NUM_BUFS+IMEM1_NUM_BUFS+ \
-                                  EMEM0_NUM_BUFS+EMEM1_NUM_BUFS+ \
+    #define_eval TOTAL_BUFS_LEFT (IMEM0_NUM_BUFS+ \
+                                  IMEM1_NUM_BUFS+ \
+                                  EMEM0_CACHE_NUM_BUFS+ \
+                                  EMEM1_CACHE_NUM_BUFS+ \
+                                  EMEM2_CACHE_NUM_BUFS+ \
+                                  EMEM0_NUM_BUFS+ \
+                                  EMEM1_NUM_BUFS+ \
                                   EMEM2_NUM_BUFS)
 
     #define_eval IMEM0_BUFS_LEFT IMEM0_NUM_BUFS
     #define_eval IMEM0_BUFS_OFF 0
     #define_eval IMEM1_BUFS_LEFT IMEM1_NUM_BUFS
     #define_eval IMEM1_BUFS_OFF 0
+    #define_eval EMEM0_CACHE_BUFS_LEFT EMEM0_CACHE_NUM_BUFS
+    #define_eval EMEM0_CACHE_BUFS_OFF 0
+    #define_eval EMEM1_CACHE_BUFS_LEFT EMEM1_CACHE_NUM_BUFS
+    #define_eval EMEM1_CACHE_BUFS_OFF 0
+    #define_eval EMEM2_CACHE_BUFS_LEFT EMEM2_CACHE_NUM_BUFS
+    #define_eval EMEM2_CACHE_BUFS_OFF 0
     #define_eval EMEM0_BUFS_LEFT EMEM0_NUM_BUFS
     #define_eval EMEM0_BUFS_OFF 0
     #define_eval EMEM1_BUFS_LEFT EMEM1_NUM_BUFS
@@ -866,14 +917,20 @@ end_cache_fill#:
     #endif
 
     #while (TOTAL_BUFS_LEFT > 0)
-        #for _MEM_REGION_ [IMEM0, IMEM1, EMEM0, EMEM1, EMEM2]
+        #for _MEM_REGION_ [IMEM0, IMEM1, EMEM0_CACHE, EMEM1_CACHE, EMEM2_CACHE, EMEM0, EMEM1, EMEM2]
 
-            #if (/**/_MEM_REGION_/**/_BUFS_LEFT > 0)
+            #if (_MEM_REGION_/**/_BUFS_LEFT > 0)
 
                 #if (streq('_MEM_REGION_', 'IMEM0'))
                     #define_eval DENSITY IMEM0_DENSITY
                 #elif (streq('_MEM_REGION_', 'IMEM1'))
                     #define_eval DENSITY IMEM1_DENSITY
+                #elif (streq('_MEM_REGION_', 'EMEM0_CACHE'))
+                    #define_eval DENSITY EMEM0_CACHE_DENSITY
+                #elif (streq('_MEM_REGION_', 'EMEM1_CACHE'))
+                    #define_eval DENSITY EMEM1_CACHE_DENSITY
+                #elif (streq('_MEM_REGION_', 'EMEM2_CACHE'))
+                    #define_eval DENSITY EMEM2_CACHE_DENSITY
                 #elif (streq('_MEM_REGION_', 'EMEM0'))
                     #define_eval DENSITY EMEM0_DENSITY
                 #elif (streq('_MEM_REGION_', 'EMEM1'))
@@ -882,7 +939,7 @@ end_cache_fill#:
                     #define_eval DENSITY EMEM2_DENSITY
                 #endif
 
-                #while ((/**/_MEM_REGION_/**/_BUFS_LEFT > 0) && (DENSITY > 0))
+                #while ((_MEM_REGION_/**/_BUFS_LEFT > 0) && (DENSITY > 0))
 
 
                     #if (streq('R_TYPE', 'EMU'))
@@ -890,6 +947,12 @@ end_cache_fill#:
                             .init R_BASE+R_OFF (((IMEM0_BASE + IMEM0_BUFS_OFF) | (1 <<23)) >> 11)
                         #elif (streq('_MEM_REGION_', 'IMEM1'))
                             .init R_BASE+R_OFF (((IMEM1_BASE + IMEM1_BUFS_OFF) | (1 <<23)) >> 11)
+                        #elif (streq('_MEM_REGION_', 'EMEM0_CACHE'))
+                            .init R_BASE+R_OFF ((EMEM0_CACHE_BASE + EMEM0_CACHE_BUFS_OFF) >> 11)
+                        #elif (streq('_MEM_REGION_', 'EMEM1_CACHE'))
+                            .init R_BASE+R_OFF ((EMEM1_CACHE_BASE + EMEM1_CACHE_BUFS_OFF) >> 11)
+                        #elif (streq('_MEM_REGION_', 'EMEM2_CACHE'))
+                            .init R_BASE+R_OFF ((EMEM2_CACHE_BASE + EMEM2_CACHE_BUFS_OFF) >> 11)
                         #elif (streq('_MEM_REGION_', 'EMEM0'))
                             .init R_BASE+R_OFF ((EMEM0_BASE + EMEM0_BUFS_OFF) >> 11)
                         #elif (streq('_MEM_REGION_', 'EMEM1'))
@@ -901,15 +964,21 @@ end_cache_fill#:
                         #define_eval R_OFF (R_OFF + 4)
                     #else
                         #if (streq('_MEM_REGION_', 'IMEM0'))
-                            .init_csr nbi:i/**/NBI_NUM/**/.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF/**/.MuAddr (((IMEM0_BASE + IMEM0_BUFS_OFF) | (1 <<23)) >> 11) const
+                            .init_csr nbi:i/**/NBI_NUM.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF.MuAddr (((IMEM0_BASE + IMEM0_BUFS_OFF) | (1 <<23)) >> 11) const
                         #elif (streq('_MEM_REGION_', 'IMEM1'))
-                            .init_csr nbi:i/**/NBI_NUM/**/.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF/**/.MuAddr (((IMEM1_BASE + IMEM1_BUFS_OFF) | (1 <<23)) >> 11) const
+                            .init_csr nbi:i/**/NBI_NUM.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF.MuAddr (((IMEM1_BASE + IMEM1_BUFS_OFF) | (1 <<23)) >> 11) const
+                        #elif (streq('_MEM_REGION_', 'EMEM0_CACHE'))
+                            .init_csr nbi:i/**/NBI_NUM.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF.MuAddr ((EMEM0_CACHE_BASE + EMEM0_CACHE_BUFS_OFF) >> 11) const
+                        #elif (streq('_MEM_REGION_', 'EMEM1_CACHE'))
+                            .init_csr nbi:i/**/NBI_NUM.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF.MuAddr ((EMEM1_CACHE_BASE + EMEM1_CACHE_BUFS_OFF) >> 11) const
+                        #elif (streq('_MEM_REGION_', 'EMEM2_CACHE'))
+                            .init_csr nbi:i/**/NBI_NUM.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF.MuAddr ((EMEM2_CACHE_BASE + EMEM2_CACHE_BUFS_OFF) >> 11) const
                         #elif (streq('_MEM_REGION_', 'EMEM0'))
-                            .init_csr nbi:i/**/NBI_NUM/**/.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF/**/.MuAddr ((EMEM0_BASE + EMEM0_BUFS_OFF) >> 11) const
+                            .init_csr nbi:i/**/NBI_NUM.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF.MuAddr ((EMEM0_BASE + EMEM0_BUFS_OFF) >> 11) const
                         #elif (streq('_MEM_REGION_', 'EMEM1'))
-                            .init_csr nbi:i/**/NBI_NUM/**/.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF/**/.MuAddr ((EMEM1_BASE + EMEM1_BUFS_OFF) >> 11) const
+                            .init_csr nbi:i/**/NBI_NUM.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF.MuAddr ((EMEM1_BASE + EMEM1_BUFS_OFF) >> 11) const
                         #elif (streq('_MEM_REGION_', 'EMEM2'))
-                            .init_csr nbi:i/**/NBI_NUM/**/.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF/**/.MuAddr ((EMEM2_BASE + EMEM2_BUFS_OFF) >> 11) const
+                            .init_csr nbi:i/**/NBI_NUM.NbiDmaCpp.NbiDmaBDSRAM.NbiDmaBDSramEntry/**/R_OFF.MuAddr ((EMEM2_BASE + EMEM2_BUFS_OFF) >> 11) const
                         #endif
 
                         #define_eval R_OFF (R_OFF + 1)
@@ -925,6 +994,15 @@ end_cache_fill#:
                     #elif (streq('_MEM_REGION_', 'IMEM1'))
                         #define_eval IMEM1_BUFS_LEFT (IMEM1_BUFS_LEFT - 1)
                         #define_eval IMEM1_BUFS_OFF  (IMEM1_BUFS_OFF  + BUF_SIZE)
+                    #elif (streq('_MEM_REGION_', 'EMEM0_CACHE'))
+                        #define_eval EMEM0_CACHE_BUFS_LEFT (EMEM0_CACHE_BUFS_LEFT - 1)
+                        #define_eval EMEM0_CACHE_BUFS_OFF  (EMEM0_CACHE_BUFS_OFF  + BUF_SIZE)
+                    #elif (streq('_MEM_REGION_', 'EMEM1_CACHE'))
+                        #define_eval EMEM1_CACHE_BUFS_LEFT (EMEM1_CACHE_BUFS_LEFT - 1)
+                        #define_eval EMEM1_CACHE_BUFS_OFF  (EMEM1_CACHE_BUFS_OFF  + BUF_SIZE)
+                    #elif (streq('_MEM_REGION_', 'EMEM2_CACHE'))
+                        #define_eval EMEM2_CACHE_BUFS_LEFT (EMEM2_CACHE_BUFS_LEFT - 1)
+                        #define_eval EMEM2_CACHE_BUFS_OFF  (EMEM2_CACHE_BUFS_OFF  + BUF_SIZE)
                     #elif (streq('_MEM_REGION_', 'EMEM0'))
                         #define_eval EMEM0_BUFS_LEFT (EMEM0_BUFS_LEFT - 1)
                         #define_eval EMEM0_BUFS_OFF  (EMEM0_BUFS_OFF  + BUF_SIZE)
@@ -950,6 +1028,12 @@ end_cache_fill#:
     #undef IMEM0_BUFS_OFF
     #undef IMEM1_BUFS_LEFT
     #undef IMEM1_BUFS_OFF
+    #undef EMEM0_CACHE_BUFS_LEFT
+    #undef EMEM0_CACHE_BUFS_OFF
+    #undef EMEM1_CACHE_BUFS_LEFT
+    #undef EMEM1_CACHE_BUFS_OFF
+    #undef EMEM2_CACHE_BUFS_LEFT
+    #undef EMEM2_CACHE_BUFS_OFF
     #undef EMEM0_BUFS_LEFT
     #undef EMEM0_BUFS_OFF
     #undef EMEM1_BUFS_LEFT
@@ -976,6 +1060,9 @@ end_cache_fill#:
 #macro blm_blq_fill(NBI_NUM, BLQ_LEN, BDSRAM_OFF, BUF_SIZE, \
                     IMEM0_NUM_BUFS, IMEM0_BASE, IMEM0_DENSITY, \
                     IMEM1_NUM_BUFS, IMEM1_BASE, IMEM1_DENSITY, \
+                    EMEM0_CACHE_NUM_BUFS, EMEM0_CACHE_BASE, EMEM0_CACHE_DENSITY, \
+                    EMEM1_CACHE_NUM_BUFS, EMEM1_CACHE_BASE, EMEM1_CACHE_DENSITY, \
+                    EMEM2_CACHE_NUM_BUFS, EMEM2_CACHE_BASE, EMEM2_CACHE_DENSITY, \
                     EMEM0_NUM_BUFS, EMEM0_BASE, EMEM0_DENSITY, \
                     EMEM1_NUM_BUFS, EMEM1_BASE, EMEM1_DENSITY, \
                     EMEM2_NUM_BUFS, EMEM2_BASE, EMEM2_DENSITY)
@@ -983,6 +1070,9 @@ end_cache_fill#:
     blm_ring_fill(BLQ, NBI_NUM, BLQ_LEN, BDSRAM_OFF, BUF_SIZE,
                   IMEM0_NUM_BUFS, IMEM0_BASE, IMEM0_DENSITY,
                   IMEM1_NUM_BUFS, IMEM1_BASE, IMEM1_DENSITY,
+                  EMEM0_CACHE_NUM_BUFS, EMEM0_CACHE_BASE, EMEM0_CACHE_DENSITY,
+                  EMEM1_CACHE_NUM_BUFS, EMEM1_CACHE_BASE, EMEM1_CACHE_DENSITY,
+                  EMEM2_CACHE_NUM_BUFS, EMEM2_CACHE_BASE, EMEM2_CACHE_DENSITY,
                   EMEM0_NUM_BUFS, EMEM0_BASE, EMEM0_DENSITY,
                   EMEM1_NUM_BUFS, EMEM1_BASE, EMEM1_DENSITY,
                   EMEM2_NUM_BUFS, EMEM2_BASE, EMEM2_DENSITY)
@@ -1003,6 +1093,9 @@ end_cache_fill#:
 #macro blm_emu_ring_fill(NBI_NUM, R_SIZE, R_BASE, BUF_SIZE, \
                          IMEM0_NUM_BUFS, IMEM0_BASE, IMEM0_DENSITY, \
                          IMEM1_NUM_BUFS, IMEM1_BASE, IMEM1_DENSITY, \
+                         EMEM0_CACHE_NUM_BUFS, EMEM0_CACHE_BASE, EMEM0_CACHE_DENSITY, \
+                         EMEM1_CACHE_NUM_BUFS, EMEM1_CACHE_BASE, EMEM1_CACHE_DENSITY, \
+                         EMEM2_CACHE_NUM_BUFS, EMEM2_CACHE_BASE, EMEM2_CACHE_DENSITY, \
                          EMEM0_NUM_BUFS, EMEM0_BASE, EMEM0_DENSITY, \
                          EMEM1_NUM_BUFS, EMEM1_BASE, EMEM1_DENSITY, \
                          EMEM2_NUM_BUFS, EMEM2_BASE, EMEM2_DENSITY)
@@ -1010,6 +1103,9 @@ end_cache_fill#:
     blm_ring_fill(EMU, NBI_NUM, R_SIZE, R_BASE, BUF_SIZE,
                   IMEM0_NUM_BUFS, IMEM0_BASE, IMEM0_DENSITY,
                   IMEM1_NUM_BUFS, IMEM1_BASE, IMEM1_DENSITY,
+                  EMEM0_CACHE_NUM_BUFS, EMEM0_CACHE_BASE, EMEM0_CACHE_DENSITY,
+                  EMEM1_CACHE_NUM_BUFS, EMEM1_CACHE_BASE, EMEM1_CACHE_DENSITY,
+                  EMEM2_CACHE_NUM_BUFS, EMEM2_CACHE_BASE, EMEM2_CACHE_DENSITY,
                   EMEM0_NUM_BUFS, EMEM0_BASE, EMEM0_DENSITY,
                   EMEM1_NUM_BUFS, EMEM1_BASE, EMEM1_DENSITY,
                   EMEM2_NUM_BUFS, EMEM2_BASE, EMEM2_DENSITY)
@@ -1045,146 +1141,56 @@ ctx0#:
 
     /* Each BLM instance populates the buffers into the BLQ/BDSram */
     #ifndef BLM_SKIP_DMA_INIT
-    #if (NBII == 8)
-
-        blm_blq_fill(NBI8_BLQ0_FILL_PARAMS)
-        #define_eval _BLQ_INIT_COUNT_   (BLM_NBI8_BLQ0_BDSRAM_IMEM0_NUM_BUFS+BLM_NBI8_BLQ0_BDSRAM_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI8_BLQ0_BDSRAM_EMEM0_NUM_BUFS+BLM_NBI8_BLQ0_BDSRAM_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI8_BLQ0_BDSRAM_EMEM2_NUM_BUFS)
-        blm_blq_ring_init(NBII, 0, BLM_NBI8_BLQ0_LEN, 0, _BLQ_INIT_COUNT_)
-
-        blm_blq_fill(NBI8_BLQ1_FILL_PARAMS)
-        #define_eval _BLQ_INIT_COUNT_   (BLM_NBI8_BLQ1_BDSRAM_IMEM0_NUM_BUFS+BLM_NBI8_BLQ1_BDSRAM_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI8_BLQ1_BDSRAM_EMEM0_NUM_BUFS+BLM_NBI8_BLQ1_BDSRAM_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI8_BLQ1_BDSRAM_EMEM2_NUM_BUFS)
-        #define_eval _BLQ1_HEAD         (BLM_NBI8_BLQ0_LEN)
-        blm_blq_ring_init(NBII, 1, BLM_NBI8_BLQ1_LEN, _BLQ1_HEAD, _BLQ_INIT_COUNT_)
-
-        blm_blq_fill(NBI8_BLQ2_FILL_PARAMS)
-        #define_eval _BLQ_INIT_COUNT_   (BLM_NBI8_BLQ2_BDSRAM_IMEM0_NUM_BUFS+BLM_NBI8_BLQ2_BDSRAM_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI8_BLQ2_BDSRAM_EMEM0_NUM_BUFS+BLM_NBI8_BLQ2_BDSRAM_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI8_BLQ2_BDSRAM_EMEM2_NUM_BUFS)
-        #define_eval _BLQ2_HEAD         (BLM_NBI8_BLQ0_LEN + BLM_NBI8_BLQ1_LEN)
-        blm_blq_ring_init(NBII, 2, BLM_NBI8_BLQ2_LEN, _BLQ2_HEAD, _BLQ_INIT_COUNT_)
-
-        blm_blq_fill(NBI8_BLQ3_FILL_PARAMS)
-        #define_eval _BLQ_INIT_COUNT_   (BLM_NBI8_BLQ3_BDSRAM_IMEM0_NUM_BUFS+BLM_NBI8_BLQ3_BDSRAM_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI8_BLQ3_BDSRAM_EMEM0_NUM_BUFS+BLM_NBI8_BLQ3_BDSRAM_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI8_BLQ3_BDSRAM_EMEM2_NUM_BUFS)
-        #define_eval _BLQ3_HEAD         (BLM_NBI8_BLQ0_LEN + BLM_NBI8_BLQ1_LEN + BLM_NBI8_BLQ2_LEN)
-        blm_blq_ring_init(NBII, 3, BLM_NBI8_BLQ3_LEN, _BLQ3_HEAD, _BLQ_INIT_COUNT_)
-
+        #for _blq [0,1,2,3]
+            #if (_blq == 0)
+                #define _BLQ_HEAD   0
+            #else
+                #define_eval _blq_prev   (_blq - 1)
+                #define_eval _BLQ_HEAD  (BLM_NBI/**/NBII/**/_BLQ/**/_blq_prev/**/_LEN + _BLQ_HEAD)
+            #endif
+			#define_eval _BLQ_INIT_COUNT_ 0
+            #for _mem_type [BDSRAM_IMEM0,BDSRAM_IMEM1,BDSRAM_EMEM0,BDSRAM_EMEM1,BDSRAM_EMEM2,BDSRAM_EMEM0_CACHE,BDSRAM_EMEM1_CACHE,BDSRAM_EMEM2_CACHE]
+                #define_eval _BLQ_INIT_COUNT_   (_BLQ_INIT_COUNT_ + \
+                                            BLM_NBI/**/NBII/**/_BLQ/**/_blq/**/_/**/_mem_type/**/_NUM_BUFS)
+            #endloop
+            blm_blq_fill(NBI/**/NBII/**/_BLQ/**/_blq/**/_FILL_PARAMS)
+            blm_blq_ring_init(NBII, _blq, BLM_NBI/**/NBII/**/_BLQ/**/_blq/**/_LEN, _BLQ_HEAD, _BLQ_INIT_COUNT_)
+        #endloop
         #undef _BLQ_INIT_COUNT_
-        #undef _BLQ1_HEAD
-        #undef _BLQ2_HEAD
-        #undef _BLQ3_HEAD
-
-    #elif (NBII == 9)
-
-        blm_blq_fill(NBI9_BLQ0_FILL_PARAMS)
-        #define_eval _BLQ_INIT_COUNT_   (BLM_NBI9_BLQ0_BDSRAM_IMEM0_NUM_BUFS+BLM_NBI9_BLQ0_BDSRAM_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ0_BDSRAM_EMEM0_NUM_BUFS+BLM_NBI9_BLQ0_BDSRAM_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ0_BDSRAM_EMEM2_NUM_BUFS)
-        blm_blq_ring_init(NBII, 0, BLM_NBI9_BLQ0_LEN, 0, _BLQ_INIT_COUNT_)
-
-        blm_blq_fill(NBI9_BLQ1_FILL_PARAMS)
-        #define_eval _BLQ_INIT_COUNT_   (BLM_NBI9_BLQ1_BDSRAM_IMEM0_NUM_BUFS+BLM_NBI9_BLQ1_BDSRAM_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ1_BDSRAM_EMEM0_NUM_BUFS+BLM_NBI9_BLQ1_BDSRAM_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ1_BDSRAM_EMEM2_NUM_BUFS)
-        #define_eval _BLQ1_HEAD         (BLM_NBI9_BLQ0_LEN)
-        blm_blq_ring_init(NBII, 1, BLM_NBI9_BLQ1_LEN, _BLQ1_HEAD, _BLQ_INIT_COUNT_)
-
-        blm_blq_fill(NBI9_BLQ2_FILL_PARAMS)
-        #define_eval _BLQ_INIT_COUNT_   (BLM_NBI9_BLQ2_BDSRAM_IMEM0_NUM_BUFS+BLM_NBI9_BLQ2_BDSRAM_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ2_BDSRAM_EMEM0_NUM_BUFS+BLM_NBI9_BLQ2_BDSRAM_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ2_BDSRAM_EMEM2_NUM_BUFS)
-        #define_eval _BLQ2_HEAD         (BLM_NBI9_BLQ0_LEN + BLM_NBI9_BLQ1_LEN)
-        blm_blq_ring_init(NBII, 2, BLM_NBI9_BLQ2_LEN, _BLQ2_HEAD, _BLQ_INIT_COUNT_)
-
-        blm_blq_fill(NBI9_BLQ3_FILL_PARAMS)
-        #define_eval _BLQ_INIT_COUNT_   (BLM_NBI9_BLQ3_BDSRAM_IMEM0_NUM_BUFS+BLM_NBI9_BLQ3_BDSRAM_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ3_BDSRAM_EMEM0_NUM_BUFS+BLM_NBI9_BLQ3_BDSRAM_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ3_BDSRAM_EMEM2_NUM_BUFS)
-        #define_eval _BLQ3_HEAD         (BLM_NBI9_BLQ0_LEN + BLM_NBI9_BLQ1_LEN + BLM_NBI9_BLQ2_LEN)
-        blm_blq_ring_init(NBII, 3, BLM_NBI9_BLQ3_LEN, _BLQ3_HEAD, _BLQ_INIT_COUNT_)
-
-        #undef _BLQ_INIT_COUNT_
-        #undef _BLQ1_HEAD
-        #undef _BLQ2_HEAD
-        #undef _BLQ3_HEAD
-
-    #else
-        #error "NBII must be 8 or 9"
-    #endif
+        #undef _BLQ_HEAD
+        #undef _blq_prev
+        #undef _blq
+        #undef _mem_type
     #endif /* BLM_SKIP_DMA_INIT */
 
 
 #ifdef BLM_INIT_EMU_RINGS
-
-    blm_emu_ring_fill(NBI8_BLQ0_EMU_RING_FILL_PARAMS)
-    #define_eval _EMU_INIT_COUNT_   (BLM_NBI8_BLQ0_EMU_IMEM0_NUM_BUFS+BLM_NBI8_BLQ0_EMU_IMEM1_NUM_BUFS+ \
-                                     BLM_NBI8_BLQ0_EMU_EMEM0_NUM_BUFS+BLM_NBI8_BLQ0_EMU_EMEM1_NUM_BUFS+ \
-                                     BLM_NBI8_BLQ0_EMU_EMEM2_NUM_BUFS)
-    blm_emu_ring_init(BLM_NBI8_BLQ0_EMU_Q_ISLAND, BLM_NBI8_BLQ0_EMU_QID, (BLM_NBI8_BLQ0_Q_SIZE/4), \
-                      _BLM_NBI8_BLQ0_EMU_Q_BASE, BLM_NBI8_BLQ0_EMU_Q_LOCALITY, NBI8_BLQ_EMU_0_PKTBUF_SIZE, _EMU_INIT_COUNT_)
-
-    blm_emu_ring_fill(NBI8_BLQ1_EMU_RING_FILL_PARAMS)
-    #define_eval _EMU_INIT_COUNT_   (BLM_NBI8_BLQ1_EMU_IMEM0_NUM_BUFS+BLM_NBI8_BLQ1_EMU_IMEM1_NUM_BUFS+ \
-                                     BLM_NBI8_BLQ1_EMU_EMEM0_NUM_BUFS+BLM_NBI8_BLQ1_EMU_EMEM1_NUM_BUFS+ \
-                                     BLM_NBI8_BLQ1_EMU_EMEM2_NUM_BUFS)
-    blm_emu_ring_init(BLM_NBI8_BLQ1_EMU_Q_ISLAND, BLM_NBI8_BLQ1_EMU_QID, (BLM_NBI8_BLQ1_Q_SIZE/4), \
-                      _BLM_NBI8_BLQ1_EMU_Q_BASE, BLM_NBI8_BLQ1_EMU_Q_LOCALITY, NBI8_BLQ_EMU_1_PKTBUF_SIZE, _EMU_INIT_COUNT_)
-
-    blm_emu_ring_fill(NBI8_BLQ2_EMU_RING_FILL_PARAMS)
-    #define_eval _EMU_INIT_COUNT_   (BLM_NBI8_BLQ2_EMU_IMEM0_NUM_BUFS+BLM_NBI8_BLQ2_EMU_IMEM1_NUM_BUFS+ \
-                                     BLM_NBI8_BLQ2_EMU_EMEM0_NUM_BUFS+BLM_NBI8_BLQ2_EMU_EMEM1_NUM_BUFS+ \
-                                     BLM_NBI8_BLQ2_EMU_EMEM2_NUM_BUFS)
-    blm_emu_ring_init(BLM_NBI8_BLQ2_EMU_Q_ISLAND, BLM_NBI8_BLQ2_EMU_QID, (BLM_NBI8_BLQ2_Q_SIZE/4), \
-                      _BLM_NBI8_BLQ2_EMU_Q_BASE, BLM_NBI8_BLQ2_EMU_Q_LOCALITY, NBI8_BLQ_EMU_2_PKTBUF_SIZE, _EMU_INIT_COUNT_)
-
-    blm_emu_ring_fill(NBI8_BLQ3_EMU_RING_FILL_PARAMS)
-    #define_eval _EMU_INIT_COUNT_   (BLM_NBI8_BLQ3_EMU_IMEM0_NUM_BUFS+BLM_NBI8_BLQ3_EMU_IMEM1_NUM_BUFS+ \
-                                     BLM_NBI8_BLQ3_EMU_EMEM0_NUM_BUFS+BLM_NBI8_BLQ3_EMU_EMEM1_NUM_BUFS+ \
-                                     BLM_NBI8_BLQ3_EMU_EMEM2_NUM_BUFS)
-    blm_emu_ring_init(BLM_NBI8_BLQ3_EMU_Q_ISLAND, BLM_NBI8_BLQ3_EMU_QID, (BLM_NBI8_BLQ3_Q_SIZE/4), \
-                      _BLM_NBI8_BLQ3_EMU_Q_BASE, BLM_NBI8_BLQ3_EMU_Q_LOCALITY, NBI8_BLQ_EMU_3_PKTBUF_SIZE, _EMU_INIT_COUNT_)
-
-    #undef _EMU_INIT_COUNT_
-
-    #ifdef SPLIT_EMU_RINGS
-
-        blm_emu_ring_fill(NBI9_BLQ0_EMU_RING_FILL_PARAMS)
-        #define_eval _EMU_INIT_COUNT_   (BLM_NBI9_BLQ0_EMU_IMEM0_NUM_BUFS+BLM_NBI9_BLQ0_EMU_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ0_EMU_EMEM0_NUM_BUFS+BLM_NBI9_BLQ0_EMU_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ0_EMU_EMEM2_NUM_BUFS)
-        blm_emu_ring_init(BLM_NBI9_BLQ0_EMU_Q_ISLAND, BLM_NBI9_BLQ0_EMU_QID, (BLM_NBI9_BLQ0_Q_SIZE/4), \
-                          _BLM_NBI9_BLQ0_EMU_Q_BASE, BLM_NBI9_BLQ0_EMU_Q_LOCALITY, NBI9_BLQ_EMU_0_PKTBUF_SIZE, _EMU_INIT_COUNT_)
-
-        blm_emu_ring_fill(NBI9_BLQ1_EMU_RING_FILL_PARAMS)
-        #define_eval _EMU_INIT_COUNT_   (BLM_NBI9_BLQ1_EMU_IMEM0_NUM_BUFS+BLM_NBI9_BLQ1_EMU_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ1_EMU_EMEM0_NUM_BUFS+BLM_NBI9_BLQ1_EMU_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ1_EMU_EMEM2_NUM_BUFS)
-        blm_emu_ring_init(BLM_NBI9_BLQ1_EMU_Q_ISLAND, BLM_NBI9_BLQ1_EMU_QID, (BLM_NBI9_BLQ1_Q_SIZE/4), \
-                          _BLM_NBI9_BLQ1_EMU_Q_BASE, BLM_NBI9_BLQ1_EMU_Q_LOCALITY, NBI9_BLQ_EMU_1_PKTBUF_SIZE, _EMU_INIT_COUNT_)
-
-        blm_emu_ring_fill(NBI9_BLQ2_EMU_RING_FILL_PARAMS)
-        #define_eval _EMU_INIT_COUNT_   (BLM_NBI9_BLQ2_EMU_IMEM0_NUM_BUFS+BLM_NBI9_BLQ2_EMU_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ2_EMU_EMEM0_NUM_BUFS+BLM_NBI9_BLQ2_EMU_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ2_EMU_EMEM2_NUM_BUFS)
-        blm_emu_ring_init(BLM_NBI9_BLQ2_EMU_Q_ISLAND, BLM_NBI9_BLQ2_EMU_QID, (BLM_NBI9_BLQ2_Q_SIZE/4), \
-                          _BLM_NBI9_BLQ2_EMU_Q_BASE, BLM_NBI9_BLQ2_EMU_Q_LOCALITY, NBI9_BLQ_EMU_2_PKTBUF_SIZE, _EMU_INIT_COUNT_)
-
-        blm_emu_ring_fill(NBI9_BLQ3_EMU_RING_FILL_PARAMS)
-        #define_eval _EMU_INIT_COUNT_   (BLM_NBI9_BLQ3_EMU_IMEM0_NUM_BUFS+BLM_NBI9_BLQ3_EMU_IMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ3_EMU_EMEM0_NUM_BUFS+BLM_NBI9_BLQ3_EMU_EMEM1_NUM_BUFS+ \
-                                         BLM_NBI9_BLQ3_EMU_EMEM2_NUM_BUFS)
-        blm_emu_ring_init(BLM_NBI9_BLQ3_EMU_Q_ISLAND, BLM_NBI9_BLQ3_EMU_QID, (BLM_NBI9_BLQ3_Q_SIZE/4), \
-                          _BLM_NBI9_BLQ3_EMU_Q_BASE, BLM_NBI9_BLQ3_EMU_Q_LOCALITY, NBI9_BLQ_EMU_3_PKTBUF_SIZE, _EMU_INIT_COUNT_)
-
+        #ifdef SPLIT_EMU_RINGS
+            #define FOR_NBIS    8,9
+        #else
+            #define FOR_NBIS    8
+        #endif /* SPLIT_EMU_RINGS */
+        #for _nbi [FOR_NBIS]
+            #for _blq [0,1,2,3]
+                #define_eval _EMU_INIT_COUNT_   0
+                #for _mem_type [EMU_IMEM0,EMU_IMEM1,EMU_EMEM0,EMU_EMEM1,EMU_EMEM2,EMU_EMEM0_CACHE,EMU_EMEM1_CACHE,EMU_EMEM2_CACHE]
+                    #define_eval _EMU_INIT_COUNT_   (_EMU_INIT_COUNT_ + \
+                                                BLM_NBI/**/NBII/**/_BLQ/**/_blq/**/_/**/_mem_type/**/_NUM_BUFS)
+                #endloop
+                blm_emu_ring_fill(NBI/**/NBII/**/_BLQ/**/_blq/**/_EMU_RING_FILL_PARAMS)
+                blm_emu_ring_init(BLM_NBI/**/_nbi/**/_BLQ/**/_blq/**/_EMU_Q_ISLAND, \
+                                  BLM_NBI/**/_nbi/**/_BLQ/**/_blq/**/_EMU_QID, \
+                                 (BLM_NBI/**/_nbi/**/_BLQ/**/_blq/**/_Q_SIZE/4), \
+                                 _BLM_NBI/**/_nbi/**/_BLQ/**/_blq/**/_EMU_Q_BASE, \
+                                  BLM_NBI/**/_nbi/**/_BLQ/**/_blq/**/_EMU_Q_LOCALITY, \
+                                  NBI/**/_nbi/**/_BLQ_EMU_/**/_blq/**/_PKTBUF_SIZE, \
+                                  _EMU_INIT_COUNT_)
+            #endloop
+        #endloop
         #undef _EMU_INIT_COUNT_
-
-    #endif /* SPLIT_EMU_RINGS */
-
+        #undef _nbi
+        #undef _blq
+        #undef _mem_type
 #endif /* BLM_INIT_EMU_RINGS */
 
     blm_cfg_blq_evnts(NBII_lsb, 0, ingress, NBI_BLQ_EVENT_THRESHOLD_ENCODING, 1, 0)
@@ -1200,6 +1206,8 @@ ctx0#:
     #define_eval _NBIX   (8 + BLM_INSTANCE_ID)
     move(addr, ((_BLM_NBI/**/_NBIX/**/_BLQ0_EMU_Q_BASE >>8)&0xFF000000))
     move(ringid, BLM_NBI/**/_NBIX/**/_BLQ0_EMU_QID)
+    move(cache_hwm, (BLM_NBI_BLQ0_CACHE_SIZE - BLM_NBI_BLQ_CACHE_DEFICIT))
+    move(cache_size, BLM_NBI_BLQ0_CACHE_SIZE)
     #undef _NBIX
     blm_init_stats()
     blm_init_filter_match(cls_ap_filter_match, CTX0_FILTER_MATCH)
@@ -1209,7 +1217,7 @@ ctx0#:
     /* Setup per BLQ LM index */
     blm_init_blq_lm_index(BLQ0_DESC_LMEM_BASE)
     /* Initialize LM */
-    blm_init_lm(BLM_BLQ_LM_REF, 0, CTM_NBI_BLQ0_CACHE_BASE)
+    blm_init_lm(BLM_BLQ_LM_REF, 0, BLM_NBI_BLQ0_CACHE_BASE)
     blm_init_info_section()
     /* This should be last macro to be called per context */
     blm_is_blq_enable(0, blm_ingress_blq_processing#)
@@ -1218,6 +1226,8 @@ ctx1#:
     #define_eval _NBIX   (8 + BLM_INSTANCE_ID)
     move(addr, (_BLM_NBI/**/_NBIX/**/_BLQ0_EMU_Q_BASE >>8)&0xFF000000)
     move(ringid, BLM_NBI/**/_NBIX/**/_BLQ0_EMU_QID)
+    move(cache_hwm, (BLM_NBI_BLQ0_CACHE_SIZE - BLM_NBI_BLQ_CACHE_DEFICIT))
+    move(cache_size, BLM_NBI_BLQ0_CACHE_SIZE)
     #undef _NBIX
     blm_init_filter_match(cls_ap_filter_match, CTX1_FILTER_MATCH)
     blm_init_filter_number(cls_ap_filter_number, BLM_BLQ1_AP_FILTER_NUM)
@@ -1229,6 +1239,8 @@ ctx2#:
     #define_eval _NBIX   (8 + BLM_INSTANCE_ID)
     move(addr, (_BLM_NBI/**/_NBIX/**/_BLQ1_EMU_Q_BASE >>8)&0xFF000000)
     move(ringid, BLM_NBI/**/_NBIX/**/_BLQ1_EMU_QID)
+    move(cache_hwm, (BLM_NBI_BLQ1_CACHE_SIZE - BLM_NBI_BLQ_CACHE_DEFICIT))
+    move(cache_size, BLM_NBI_BLQ1_CACHE_SIZE)
     #undef _NBIX
     blm_init_stats()
     blm_init_filter_match(cls_ap_filter_match, CTX2_FILTER_MATCH)
@@ -1236,13 +1248,15 @@ ctx2#:
     /* Setup per BLQ LM index */
     blm_init_blq_lm_index(BLQ1_DESC_LMEM_BASE)
     /* Initialize LM */
-    blm_init_lm(BLM_BLQ_LM_REF, 1, CTM_NBI_BLQ1_CACHE_BASE)
+    blm_init_lm(BLM_BLQ_LM_REF, 1, BLM_NBI_BLQ1_CACHE_BASE)
     blm_is_blq_enable(1, blm_ingress_blq_processing#)
 ctx3#:
     move(blq_stats_base, (CTM_NBI_BLQ1_STATS_BASE & 0xffffffff))
     #define_eval _NBIX   (8 + BLM_INSTANCE_ID)
     move(addr, (_BLM_NBI/**/_NBIX/**/_BLQ1_EMU_Q_BASE >>8)&0xFF000000)
     move(ringid, BLM_NBI/**/_NBIX/**/_BLQ1_EMU_QID)
+    move(cache_hwm, (BLM_NBI_BLQ1_CACHE_SIZE - BLM_NBI_BLQ_CACHE_DEFICIT))
+    move(cache_size, BLM_NBI_BLQ1_CACHE_SIZE)
     #undef _NBIX
     blm_init_filter_match(cls_ap_filter_match, CTX3_FILTER_MATCH)
     blm_init_filter_number(cls_ap_filter_number, BLM_BLQ3_AP_FILTER_NUM)
@@ -1254,6 +1268,8 @@ ctx4#:
     #define_eval _NBIX   (8 + BLM_INSTANCE_ID)
     move(addr, (_BLM_NBI/**/_NBIX/**/_BLQ2_EMU_Q_BASE >>8)&0xFF000000)
     move(ringid, BLM_NBI/**/_NBIX/**/_BLQ2_EMU_QID)
+    move(cache_hwm, (BLM_NBI_BLQ2_CACHE_SIZE - BLM_NBI_BLQ_CACHE_DEFICIT))
+    move(cache_size, BLM_NBI_BLQ2_CACHE_SIZE)
     #undef _NBIX
     blm_init_stats()
     blm_init_filter_match(cls_ap_filter_match, CTX4_FILTER_MATCH)
@@ -1261,13 +1277,15 @@ ctx4#:
     /* Setup per BLQ LM index */
     blm_init_blq_lm_index(BLQ2_DESC_LMEM_BASE)
     /* Initialize LM */
-    blm_init_lm(BLM_BLQ_LM_REF, 2, CTM_NBI_BLQ2_CACHE_BASE)
+    blm_init_lm(BLM_BLQ_LM_REF, 2, BLM_NBI_BLQ2_CACHE_BASE)
     blm_is_blq_enable(2, blm_ingress_blq_processing#)
 ctx5#:
     move(blq_stats_base, (CTM_NBI_BLQ2_STATS_BASE & 0xffffffff))
     #define_eval _NBIX   (8 + BLM_INSTANCE_ID)
     move(addr, (_BLM_NBI/**/_NBIX/**/_BLQ2_EMU_Q_BASE >>8)&0xFF000000)
     move(ringid, BLM_NBI/**/_NBIX/**/_BLQ2_EMU_QID)
+    move(cache_hwm, (BLM_NBI_BLQ2_CACHE_SIZE - BLM_NBI_BLQ_CACHE_DEFICIT))
+    move(cache_size, BLM_NBI_BLQ2_CACHE_SIZE)
     #undef _NBIX
     blm_init_filter_match(cls_ap_filter_match, CTX5_FILTER_MATCH)
     blm_init_filter_number(cls_ap_filter_number, BLM_BLQ5_AP_FILTER_NUM)
@@ -1279,6 +1297,8 @@ ctx6#:
     #define_eval _NBIX   (8 + BLM_INSTANCE_ID)
     move(addr, (_BLM_NBI/**/_NBIX/**/_BLQ3_EMU_Q_BASE >>8)&0xFF000000)
     move(ringid, BLM_NBI/**/_NBIX/**/_BLQ3_EMU_QID)
+    move(cache_hwm, (BLM_NBI_BLQ3_CACHE_SIZE - BLM_NBI_BLQ_CACHE_DEFICIT))
+    move(cache_size, BLM_NBI_BLQ3_CACHE_SIZE)
     #undef _NBIX
     blm_init_stats()
     blm_init_filter_match(cls_ap_filter_match, CTX6_FILTER_MATCH)
@@ -1286,13 +1306,15 @@ ctx6#:
     /* Setup per BLQ LM index */
     blm_init_blq_lm_index(BLQ3_DESC_LMEM_BASE)
     /* Initialize LM */
-    blm_init_lm(BLM_BLQ_LM_REF, 3, CTM_NBI_BLQ3_CACHE_BASE)
+    blm_init_lm(BLM_BLQ_LM_REF, 3, BLM_NBI_BLQ3_CACHE_BASE)
     blm_is_blq_enable(3, blm_ingress_blq_processing#)
 ctx7#:
     move(blq_stats_base, (CTM_NBI_BLQ3_STATS_BASE & 0xffffffff))
     #define_eval _NBIX   (8 + BLM_INSTANCE_ID)
     move(addr, (_BLM_NBI/**/_NBIX/**/_BLQ3_EMU_Q_BASE >>8)&0xFF000000)
     move(ringid, BLM_NBI/**/_NBIX/**/_BLQ3_EMU_QID)
+    move(cache_hwm, (BLM_NBI_BLQ3_CACHE_SIZE - BLM_NBI_BLQ_CACHE_DEFICIT))
+    move(cache_size, BLM_NBI_BLQ3_CACHE_SIZE)
     #undef _NBIX
     blm_init_filter_match(cls_ap_filter_match, CTX7_FILTER_MATCH)
     blm_init_filter_number(cls_ap_filter_number, BLM_BLQ7_AP_FILTER_NUM)
@@ -1309,6 +1331,8 @@ blm_ctx_init_end#:
 .reg cls_ap_filter_number
 .reg blq_stats_base
 .reg ringid
+.reg cache_hwm
+.reg cache_size
 .reg cache_cnt
 .set ringid
 
@@ -1464,7 +1488,7 @@ blm_egress_blq_processing#:
                     blm_cache_acquire_lock()
                     alu[cache_cnt, --, b, BLM_BLQ_LM_REF[BLM_LM_BLQ_CACHE_ENTRY_CNT_OFFSET]]
                     blm_cache_release_lock()
-                    .if (cache_cnt >= BLM_BLQ_CACHE_HWM)
+                    .if (cache_cnt >= cache_hwm)
                         blm_egress_pull_buffers_to_emu_ring(NbiNum, blq, addr, ringid)
                         blm_stats(BLM_STATS_RECYCLE_TM_TO_EMU)
                     .else
@@ -1511,7 +1535,7 @@ blm_ingress_blq_processing#:
     evntm_cls_autopush_monitor_config(cls_ap_filter_number, &$event_data[0], &auto_push_event_sig)
 
     /* Fill cache, if shadow EMU ring has buffers */
-    .while (BLM_BLQ_LM_REF[BLM_LM_BLQ_CACHE_ENTRY_CNT_OFFSET] < BLQ_MAX_CACHE_CNT)
+    .while (BLM_BLQ_LM_REF[BLM_LM_BLQ_CACHE_ENTRY_CNT_OFFSET] < cache_size)
         blm_cache_fill(addr, ringid, sig_memget0, init_cache_fill_complete#)
     .endw
     init_cache_fill_complete#:
@@ -1587,7 +1611,7 @@ service_check#:
             blm_cache_acquire_lock()
             alu[cache_cnt, --, b, BLM_BLQ_LM_REF[BLM_LM_BLQ_CACHE_ENTRY_CNT_OFFSET]]
             blm_cache_release_lock()
-            .while (cache_cnt < BLM_BLQ_CACHE_HWM)
+            .while (cache_cnt < cache_hwm)
                 D(MAILBOX3, 0x3333)
                 blm_cache_fill(addr, ringid, sig_memget0, cache_fill_complete#)
                 blm_cache_acquire_lock()

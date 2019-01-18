@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2015-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,21 @@
 #define CFG_RX_CSUM_PREPEND
 #define PKT_NBI_OFFSET          64
 #define MAC_PREPEND_BYTES       8
+
+#ifndef NBI
+#define NBI 0
+#endif
+
+#define MAC_CHAN_PER_PORT   4
+#define TMQ_PER_PORT        (MAC_CHAN_PER_PORT * 8)
+
+#define MAC_TO_PORT(x)      (x / MAC_CHAN_PER_PORT)
+#define PORT_TO_TMQ(x)      (x * TMQ_PER_PORT)
+
+#ifndef PKT_NBI_OFFSET
+#define PKT_NBI_OFFSET 64
+#warning PKT_NIB_OFFSET is undefined
+#endif
 
 
 #endif /* __APP_CONFIG_H__ */

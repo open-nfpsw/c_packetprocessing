@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015,  Netronome Systems, Inc.  All rights reserved.
+# Copyright (C) 2015-2018,  Netronome Systems, Inc.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ scripts_dir     := $(base_dir)/scripts
 
 include $(scripts_dir)/Makefile.nfp.config
 -include Makefile.nfp.config
-
-PKT_NBI_OFFSET ?= 64
 
 all: wire.fw
 

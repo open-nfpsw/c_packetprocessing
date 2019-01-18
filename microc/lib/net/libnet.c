@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright 2012-2015 Netronome, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@
 #include <net/gre.h>
 #include <net/hdr_ext.h>
 #include <net/ip.h>
+#include <net/mpls.h>
 #include <net/tcp.h>
 #include <net/udp.h>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2012-2017,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,15 @@
 #include "_c/mem_atomic.c"
 #include "_c/mem_bulk.c"
 #include "_c/mem_cam.c"
+#include "_c/mem_lkup.c"
 #include "_c/mem_pe.c"
 #include "_c/mem_ring.c"
 #include "_c/pcie.c"
+#include "_c/remote_me.c"
 #include "_c/tmq.c"
 #include "_c/xpb.c"
+#include "_c/tm_config.c"
+#include "_c/mac_csr_synch.c"
 
 /*
  * The following code implements all the functionality in <nfp.h>.  It

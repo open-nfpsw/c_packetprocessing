@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright 2014-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,7 +144,7 @@ struct mem_cam_32bit {
  * Perform indicated CAM lookup.  The @camsize and @cambits parameters
  * must be constant literals.
  */
-__intrinsic void __mem_cam_lookup(__xrw void *data, __mem void *addr,
+__intrinsic void __mem_cam_lookup(__xrw void *data, __mem40 void *addr,
                                   int camsize, int cambits,
                                   sync_t sync, SIGNAL_PAIR *sigpair);
 
@@ -157,7 +157,7 @@ __intrinsic void __mem_cam_lookup(__xrw void *data, __mem void *addr,
  *
  * Perform indicated CAM lookup.  Return when operation completes.
  */
-__intrinsic void mem_cam_lookup(__xrw void *data, __mem void *addr,
+__intrinsic void mem_cam_lookup(__xrw void *data, __mem40 void *addr,
                                 int camsize, int cambits);
 
 /**
@@ -172,7 +172,7 @@ __intrinsic void mem_cam_lookup(__xrw void *data, __mem void *addr,
  * Perform indicated CAM lookup add.  The @camsize and @cambits parameters
  * must be constant literals.
  */
-__intrinsic void __mem_cam_lookup_add(__xrw void *data, __mem void *addr,
+__intrinsic void __mem_cam_lookup_add(__xrw void *data, __mem40 void *addr,
                                       int camsize, int cambits,
                                       sync_t sync, SIGNAL_PAIR *sigpair);
 
@@ -185,7 +185,7 @@ __intrinsic void __mem_cam_lookup_add(__xrw void *data, __mem void *addr,
  *
  * Perform indicated CAM lookup add.  Return when operation completes.
  */
-__intrinsic void mem_cam_lookup_add(__xrw void *data, __mem void *addr,
+__intrinsic void mem_cam_lookup_add(__xrw void *data, __mem40 void *addr,
                                     int camsize, int cambits);
 
 /*
@@ -195,228 +195,228 @@ __intrinsic void mem_cam_lookup_add(__xrw void *data, __mem void *addr,
  */
 
 __intrinsic void __mem_cam128_lookup8(__xrw struct mem_cam_8bit *data,
-                                      __mem __align16 void *addr,
+                                      __mem40 __align16 void *addr,
                                       sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam128_lookup8(__xrw struct mem_cam_8bit *data,
-                                    __mem __align32 void *addr);
+                                    __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam128_lookup16(__xrw struct mem_cam_16bit *data,
-                                       __mem __align16 void *addr,
+                                       __mem40 __align16 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam128_lookup16(__xrw struct mem_cam_16bit *data,
-                                     __mem __align16 void *addr);
+                                     __mem40 __align16 void *addr);
 
 __intrinsic void __mem_cam128_lookup24(__xrw struct mem_cam_24bit *data,
-                                       __mem __align16 void *addr,
+                                       __mem40 __align16 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam128_lookup24(__xrw struct mem_cam_24bit *data,
-                                     __mem __align16 void *addr);
+                                     __mem40 __align16 void *addr);
 
 __intrinsic void __mem_cam128_lookup32(__xrw struct mem_cam_32bit *data,
-                                       __mem __align16 void *addr,
+                                       __mem40 __align16 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam128_lookup32(__xrw struct mem_cam_32bit *data,
-                                     __mem __align16 void *addr);
+                                     __mem40 __align16 void *addr);
 
 __intrinsic void __mem_cam256_lookup8(__xrw struct mem_cam_8bit *data,
-                                      __mem __align32 void *addr,
+                                      __mem40 __align32 void *addr,
                                       sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam256_lookup8(__xrw struct mem_cam_8bit *data,
-                                    __mem __align32 void *addr);
+                                    __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam256_lookup16(__xrw struct mem_cam_16bit *data,
-                                       __mem __align32 void *addr,
+                                       __mem40 __align32 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam256_lookup16(__xrw struct mem_cam_16bit *data,
-                                     __mem __align32 void *addr);
+                                     __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam256_lookup24(__xrw struct mem_cam_24bit *data,
-                                       __mem __align32 void *addr,
+                                       __mem40 __align32 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam256_lookup24(__xrw struct mem_cam_24bit *data,
-                                     __mem __align32 void *addr);
+                                     __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam256_lookup32(__xrw struct mem_cam_32bit *data,
-                                       __mem __align32 void *addr,
+                                       __mem40 __align32 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam256_lookup32(__xrw struct mem_cam_32bit *data,
-                                     __mem __align32 void *addr);
+                                     __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam384_lookup8(__xrw struct mem_cam_8bit *data,
-                                      __mem __align64 void *addr,
+                                      __mem40 __align64 void *addr,
                                       sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam384_lookup8(__xrw struct mem_cam_8bit *data,
-                                    __mem __align64 void *addr);
+                                    __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam384_lookup16(__xrw struct mem_cam_16bit *data,
-                                       __mem __align64 void *addr,
+                                       __mem40 __align64 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam384_lookup16(__xrw struct mem_cam_16bit *data,
-                                     __mem __align64 void *addr);
+                                     __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam384_lookup24(__xrw struct mem_cam_24bit *data,
-                                       __mem __align64 void *addr,
+                                       __mem40 __align64 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam384_lookup24(__xrw struct mem_cam_24bit *data,
-                                     __mem __align64 void *addr);
+                                     __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam384_lookup32(__xrw struct mem_cam_32bit *data,
-                                       __mem __align64 void *addr,
+                                       __mem40 __align64 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam384_lookup32(__xrw struct mem_cam_32bit *data,
-                                     __mem __align64 void *addr);
+                                     __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam512_lookup8(__xrw struct mem_cam_8bit *data,
-                                      __mem __align64 void *addr,
+                                      __mem40 __align64 void *addr,
                                       sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam512_lookup8(__xrw struct mem_cam_8bit *data,
-                                    __mem __align64 void *addr);
+                                    __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam512_lookup16(__xrw struct mem_cam_16bit *data,
-                                       __mem __align64 void *addr,
+                                       __mem40 __align64 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam512_lookup16(__xrw struct mem_cam_16bit *data,
-                                     __mem __align64 void *addr);
+                                     __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam512_lookup24(__xrw struct mem_cam_24bit *data,
-                                       __mem __align64 void *addr,
+                                       __mem40 __align64 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam512_lookup24(__xrw struct mem_cam_24bit *data,
-                                     __mem __align64 void *addr);
+                                     __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam512_lookup32(__xrw struct mem_cam_32bit *data,
-                                       __mem __align64 void *addr,
+                                       __mem40 __align64 void *addr,
                                        sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam512_lookup32(__xrw struct mem_cam_32bit *data,
-                                     __mem __align64 void *addr);
+                                     __mem40 __align64 void *addr);
 
 /* Lookup and add */
 __intrinsic void __mem_cam128_lookup8_add(__xrw struct mem_cam_8bit *data,
-                                          __mem __align16 void *addr,
+                                          __mem40 __align16 void *addr,
                                           sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam128_lookup8_add(__xrw struct mem_cam_8bit *data,
-                                        __mem __align32 void *addr);
+                                        __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam128_lookup16_add(__xrw struct mem_cam_16bit *data,
-                                           __mem __align16 void *addr,
+                                           __mem40 __align16 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam128_lookup16_add(__xrw struct mem_cam_16bit *data,
-                                         __mem __align16 void *addr);
+                                         __mem40 __align16 void *addr);
 
 __intrinsic void __mem_cam128_lookup24_add(__xrw struct mem_cam_24bit *data,
-                                           __mem __align16 void *addr,
+                                           __mem40 __align16 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam128_lookup24_add(__xrw struct mem_cam_24bit *data,
-                                         __mem __align16 void *addr);
+                                         __mem40 __align16 void *addr);
 
 __intrinsic void __mem_cam128_lookup32_add(__xrw struct mem_cam_32bit *data,
-                                           __mem __align16 void *addr,
+                                           __mem40 __align16 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam128_lookup32_add(__xrw struct mem_cam_32bit *data,
-                                         __mem __align16 void *addr);
+                                         __mem40 __align16 void *addr);
 
 __intrinsic void __mem_cam256_lookup8_add(__xrw struct mem_cam_8bit *data,
-                                          __mem __align32 void *addr,
+                                          __mem40 __align32 void *addr,
                                           sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam256_lookup8_add(__xrw struct mem_cam_8bit *data,
-                                        __mem __align32 void *addr);
+                                        __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam256_lookup16_add(__xrw struct mem_cam_16bit *data,
-                                           __mem __align32 void *addr,
+                                           __mem40 __align32 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam256_lookup16_add(__xrw struct mem_cam_16bit *data,
-                                         __mem __align32 void *addr);
+                                         __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam256_lookup24_add(__xrw struct mem_cam_24bit *data,
-                                           __mem __align32 void *addr,
+                                           __mem40 __align32 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam256_lookup24_add(__xrw struct mem_cam_24bit *data,
-                                         __mem __align32 void *addr);
+                                         __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam256_lookup32_add(__xrw struct mem_cam_32bit *data,
-                                           __mem __align32 void *addr,
+                                           __mem40 __align32 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam256_lookup32_add(__xrw struct mem_cam_32bit *data,
-                                         __mem __align32 void *addr);
+                                         __mem40 __align32 void *addr);
 
 __intrinsic void __mem_cam384_lookup8_add(__xrw struct mem_cam_8bit *data,
-                                          __mem __align64 void *addr,
+                                          __mem40 __align64 void *addr,
                                           sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam384_lookup8_add(__xrw struct mem_cam_8bit *data,
-                                        __mem __align64 void *addr);
+                                        __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam384_lookup16_add(__xrw struct mem_cam_16bit *data,
-                                           __mem __align64 void *addr,
+                                           __mem40 __align64 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam384_lookup16_add(__xrw struct mem_cam_16bit *data,
-                                         __mem __align64 void *addr);
+                                         __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam384_lookup24_add(__xrw struct mem_cam_24bit *data,
-                                           __mem __align64 void *addr,
+                                           __mem40 __align64 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam384_lookup24_add(__xrw struct mem_cam_24bit *data,
-                                         __mem __align64 void *addr);
+                                         __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam384_lookup32_add(__xrw struct mem_cam_32bit *data,
-                                           __mem __align64 void *addr,
+                                           __mem40 __align64 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam384_lookup32_add(__xrw struct mem_cam_32bit *data,
-                                         __mem __align64 void *addr);
+                                         __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam512_lookup8_add(__xrw struct mem_cam_8bit *data,
-                                          __mem __align64 void *addr,
+                                          __mem40 __align64 void *addr,
                                           sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam512_lookup8_add(__xrw struct mem_cam_8bit *data,
-                                        __mem __align64 void *addr);
+                                        __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam512_lookup16_add(__xrw struct mem_cam_16bit *data,
-                                           __mem __align64 void *addr,
+                                           __mem40 __align64 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam512_lookup16_add(__xrw struct mem_cam_16bit *data,
-                                         __mem __align64 void *addr);
+                                         __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam512_lookup24_add(__xrw struct mem_cam_24bit *data,
-                                           __mem __align64 void *addr,
+                                           __mem40 __align64 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam512_lookup24_add(__xrw struct mem_cam_24bit *data,
-                                         __mem __align64 void *addr);
+                                         __mem40 __align64 void *addr);
 
 __intrinsic void __mem_cam512_lookup32_add(__xrw struct mem_cam_32bit *data,
-                                           __mem __align64 void *addr,
+                                           __mem40 __align64 void *addr,
                                            sync_t sync, SIGNAL_PAIR *sigpair);
 
 __intrinsic void mem_cam512_lookup32_add(__xrw struct mem_cam_32bit *data,
-                                         __mem __align64 void *addr);
+                                         __mem40 __align64 void *addr);
 
 #endif /* !_NFP__MEM_CAM_H_ */

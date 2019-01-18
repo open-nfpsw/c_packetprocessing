@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2014-2017,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,36 @@
 #if defined(__NFP_LANG_MICROC)
 
 /**
+ * Read the value from one or a series of XPB addresses.
+ * @param data      Pointer to local read transfer register
+ * @param addr      XPB address
+ * @param size      Size of the read, must be a multiple of 4
+ * @param max_size  Used to determine largest read, if size is not a constant
+ * @param sync      Type of synchronization (sig_done or ctx_swap)
+ * @param sig       Signal to use
+ */
+__intrinsic void __xpb_read(__xread void *data, unsigned int addr, size_t size,
+                            const size_t max_size, sync_t sync, SIGNAL *sig);
+
+/**
  * Read the value from an XPB address.
  * @param addr   XPB address
  * @return the value read
  */
 __intrinsic unsigned int xpb_read(unsigned int addr);
+
+/**
+ * Write a value to one or a series of XPB addresses.
+ * @param data      Pointer to local write transfer register
+ * @param addr      XPB address
+ * @param size      Size of the write, must be a multiple of 4
+ * @param max_size  Used to determine largest write, if size is not a constant
+ * @param sync      Type of synchronization (sig_done or ctx_swap)
+ * @param sig       Signal to use
+ */
+__intrinsic void __xpb_write(__xwrite void *data, unsigned int addr,
+                             size_t size, const size_t max_size, sync_t sync,
+                             SIGNAL *sig);
 
 /**
  * Write a value to an XPB address.

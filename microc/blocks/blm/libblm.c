@@ -13,24 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file        libblm_pkt_fl.c
- * @brief       Buffers alloc and free using BLM EMU rings.
- *
- * A Micro-c implementation for buffer allocation and free from the BLM
- * EMU rings.
- * see blm_iface_c.h for RING IDs allocation and for Ring memory
- * allocation.
- * The BLM code will initialize the rings (i.e. write the queue descriptors)
- * when the compile time swith "BLM_INIT_EMU_RINGS" is defined.
- *
- * This implementation tries to folow the ASM implementation.
- * (See libblm_pkt_fl.uc for ASM details).
+ * @file        libblm.c
+ * @brief       Micro-C implementation for BLM buffer alloc/free
  */
-#include <nfp6000/nfp_me.h>
-#include <assert.h>
 
-#include "libblm.h"
-#include "libblm_pkt_fl.h"
+#include <assert.h>
+#include <nfp/mem_ring.h>
+#include <nfp6000/nfp_me.h>
+
+#include "blm.h"
 
 __intrinsic int
 __blm_buf_alloc(__xread blm_buf_handle_t *buf, unsigned int blq,

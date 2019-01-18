@@ -166,6 +166,71 @@ ffs64(unsigned long long int data)
     return result;
 }
 
+
+#define __ROTR32(_r, _v, _a) \
+    __asm { alu[_r, --, B, _v, >>rot##_a] }
+
+__intrinsic unsigned int
+rotr32(unsigned int val, unsigned int amt)
+{
+    unsigned int result;
+    if (__is_ct_const(amt)) {
+        if (__is_ct_const(val)) {
+            result = (val >> (amt % 32)) | (val << (32 - (amt % 32)));
+        } else {
+            switch (amt % 32) {
+            case  0: result = val;              break;
+            case  1: __ROTR32(result, val,  1); break;
+            case  2: __ROTR32(result, val,  2); break;
+            case  3: __ROTR32(result, val,  3); break;
+            case  4: __ROTR32(result, val,  4); break;
+            case  5: __ROTR32(result, val,  5); break;
+            case  6: __ROTR32(result, val,  6); break;
+            case  7: __ROTR32(result, val,  7); break;
+            case  8: __ROTR32(result, val,  8); break;
+            case  9: __ROTR32(result, val,  9); break;
+            case 10: __ROTR32(result, val, 10); break;
+            case 11: __ROTR32(result, val, 11); break;
+            case 12: __ROTR32(result, val, 12); break;
+            case 13: __ROTR32(result, val, 13); break;
+            case 14: __ROTR32(result, val, 14); break;
+            case 15: __ROTR32(result, val, 15); break;
+            case 16: __ROTR32(result, val, 16); break;
+            case 17: __ROTR32(result, val, 17); break;
+            case 18: __ROTR32(result, val, 18); break;
+            case 19: __ROTR32(result, val, 19); break;
+            case 20: __ROTR32(result, val, 20); break;
+            case 21: __ROTR32(result, val, 21); break;
+            case 22: __ROTR32(result, val, 22); break;
+            case 23: __ROTR32(result, val, 23); break;
+            case 24: __ROTR32(result, val, 24); break;
+            case 25: __ROTR32(result, val, 25); break;
+            case 26: __ROTR32(result, val, 26); break;
+            case 27: __ROTR32(result, val, 27); break;
+            case 28: __ROTR32(result, val, 28); break;
+            case 29: __ROTR32(result, val, 29); break;
+            case 30: __ROTR32(result, val, 30); break;
+            case 31: __ROTR32(result, val, 31); break;
+            }
+        }
+    } else {
+        unsigned int copy;
+        __asm { alu[copy, amt, B, val] }
+        __asm { dbl_shf[result, val, copy, >>indirect] }
+    }
+    return result;
+}
+
+#undef __ROTR32
+
+
+__intrinsic unsigned int
+rotl32(unsigned int val, unsigned int amt)
+{
+    return rotr32(val, 32 - amt);
+}
+
+
 __intrinsic unsigned int
 crc_read(void)
 {

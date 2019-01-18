@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2012-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,69 +50,69 @@
  * The 'swap_le' versions use little endian byte addressing and perform
  * byte-swapping on the data read.
  */
-__intrinsic void __mem_read64(__xread void *data, __mem void *addr,
+__intrinsic void __mem_read64(__xread void *data, __mem40 void *addr,
                               size_t size, const size_t max_size,
                               sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_read64(__xread void *data, __mem void *addr,
+__intrinsic void mem_read64(__xread void *data, __mem40 void *addr,
                             const size_t size);
 
-__intrinsic void __mem_read64_le(__xread void *data, __mem void *addr,
+__intrinsic void __mem_read64_le(__xread void *data, __mem40 void *addr,
                                  size_t size, const size_t max_size,
                                  sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_read64_le(__xread void *data, __mem void *addr,
+__intrinsic void mem_read64_le(__xread void *data, __mem40 void *addr,
                                const size_t size);
 
-__intrinsic void __mem_read64_swap(__xread void *data, __mem void *addr,
+__intrinsic void __mem_read64_swap(__xread void *data, __mem40 void *addr,
                                    size_t size, const size_t max_size,
                                    sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_read64_swap(__xread void *data, __mem void *addr,
+__intrinsic void mem_read64_swap(__xread void *data, __mem40 void *addr,
                                  const size_t size);
 
-__intrinsic void __mem_read64_swap_le(__xread void *data, __mem void *addr,
+__intrinsic void __mem_read64_swap_le(__xread void *data, __mem40 void *addr,
                                    size_t size, const size_t max_size,
                                    sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_read64_swap_le(__xread void *data, __mem void *addr,
+__intrinsic void mem_read64_swap_le(__xread void *data, __mem40 void *addr,
                                  const size_t size);
 
 
-__intrinsic void __mem_read32(__xread void *data, __mem void *addr,
+__intrinsic void __mem_read32(__xread void *data, __mem40 void *addr,
                               size_t size, const size_t max_size,
                               sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_read32(__xread void *data, __mem void *addr,
+__intrinsic void mem_read32(__xread void *data, __mem40 void *addr,
                             const size_t size);
 
-__intrinsic void __mem_read32_le(__xread void *data, __mem void *addr,
+__intrinsic void __mem_read32_le(__xread void *data, __mem40 void *addr,
                                  size_t size, const size_t max_size,
                                  sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_read32_le(__xread void *data, __mem void *addr,
+__intrinsic void mem_read32_le(__xread void *data, __mem40 void *addr,
                                const size_t size);
 
-__intrinsic void __mem_read32_swap(__xread void *data, __mem void *addr,
+__intrinsic void __mem_read32_swap(__xread void *data, __mem40 void *addr,
                                    size_t size, const size_t max_size,
                                    sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_read32_swap(__xread void *data, __mem void *addr,
+__intrinsic void mem_read32_swap(__xread void *data, __mem40 void *addr,
                                  const size_t size);
 
-__intrinsic void __mem_read32_swap_le(__xread void *data, __mem void *addr,
+__intrinsic void __mem_read32_swap_le(__xread void *data, __mem40 void *addr,
                                    size_t size, const size_t max_size,
                                    sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_read32_swap_le(__xread void *data, __mem void *addr,
+__intrinsic void mem_read32_swap_le(__xread void *data, __mem40 void *addr,
                                  const size_t size);
 
 
-__intrinsic void __mem_read8(__xread void *data, __mem void *addr,
+__intrinsic void __mem_read8(__xread void *data, __mem40 void *addr,
                              size_t size, const size_t max_size,
                              sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_read8(__xread void *data, __mem void *addr,
+__intrinsic void mem_read8(__xread void *data, __mem40 void *addr,
                            const size_t size);
 
 
@@ -142,90 +142,90 @@ __intrinsic void mem_read8(__xread void *data, __mem void *addr,
  * The 'swap_le' versions use little endian byte addressing and perform
  * byte-swapping on the data written.
  */
-__intrinsic void __mem_write64(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write64(__xwrite void *data, __mem40 void *addr,
                                size_t size, const size_t max_size,
                                sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write64(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write64(__xwrite void *data, __mem40 void *addr,
                              const size_t size);
 
-__intrinsic void __mem_write64_le(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write64_le(__xwrite void *data, __mem40 void *addr,
                                   size_t size, const size_t max_size,
                                   sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write64_le(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write64_le(__xwrite void *data, __mem40 void *addr,
                                 const size_t size);
 
-__intrinsic void __mem_write64_swap(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write64_swap(__xwrite void *data, __mem40 void *addr,
                                     size_t size, const size_t max_size,
                                     sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write64_swap(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write64_swap(__xwrite void *data, __mem40 void *addr,
                                   const size_t size);
 
-__intrinsic void __mem_write64_swap_le(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write64_swap_le(__xwrite void *data, __mem40 void *addr,
                                     size_t size, const size_t max_size,
                                     sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write64_swap_le(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write64_swap_le(__xwrite void *data, __mem40 void *addr,
                                   const size_t size);
 
 
-__intrinsic void __mem_write32(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write32(__xwrite void *data, __mem40 void *addr,
                                size_t size, const size_t max_size,
                                sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write32(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write32(__xwrite void *data, __mem40 void *addr,
                              const size_t size);
 
-__intrinsic void __mem_write32_le(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write32_le(__xwrite void *data, __mem40 void *addr,
                                   size_t size, const size_t max_size,
                                   sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write32_le(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write32_le(__xwrite void *data, __mem40 void *addr,
                                 const size_t size);
 
-__intrinsic void __mem_write32_swap(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write32_swap(__xwrite void *data, __mem40 void *addr,
                                     size_t size, const size_t max_size,
                                     sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write32_swap(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write32_swap(__xwrite void *data, __mem40 void *addr,
                                   const size_t size);
 
-__intrinsic void __mem_write32_swap_le(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write32_swap_le(__xwrite void *data, __mem40 void *addr,
                                     size_t size, const size_t max_size,
                                     sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write32_swap_le(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write32_swap_le(__xwrite void *data, __mem40 void *addr,
                                   const size_t size);
 
 
-__intrinsic void __mem_write8(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write8(__xwrite void *data, __mem40 void *addr,
                               size_t size, const size_t max_size,
                               sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write8(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write8(__xwrite void *data, __mem40 void *addr,
                             const size_t size);
 
-__intrinsic void __mem_write8_le(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write8_le(__xwrite void *data, __mem40 void *addr,
                                  size_t size, const size_t max_size,
                                  sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write8_le(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write8_le(__xwrite void *data, __mem40 void *addr,
                                const size_t size);
 
-__intrinsic void __mem_write8_swap(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write8_swap(__xwrite void *data, __mem40 void *addr,
                                    size_t size, const size_t max_size,
                                    sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write8_swap(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write8_swap(__xwrite void *data, __mem40 void *addr,
                                  const size_t size);
 
-__intrinsic void __mem_write8_swap_le(__xwrite void *data, __mem void *addr,
+__intrinsic void __mem_write8_swap_le(__xwrite void *data, __mem40 void *addr,
                                    size_t size, const size_t max_size,
                                    sync_t sync, SIGNAL *sig);
 
-__intrinsic void mem_write8_swap_le(__xwrite void *data, __mem void *addr,
+__intrinsic void mem_write8_swap_le(__xwrite void *data, __mem40 void *addr,
                                  const size_t size);
 
 #endif /* !_NFP__MEM_BULK_H_ */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2015-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ do {                                                                        \
 
 
 __intrinsic void
-__mem_pe_dma_mu_to_ctm(__ctm void *ctm_addr, __mem void *mem_addr,
+__mem_pe_dma_mu_to_ctm(__ctm40 void *ctm_addr, __mem40 void *mem_addr,
                        size_t size, sync_t sync, SIGNAL *sig)
 {
     try_ctassert(__is_aligned(size, 64));
@@ -76,7 +76,8 @@ __mem_pe_dma_mu_to_ctm(__ctm void *ctm_addr, __mem void *mem_addr,
 }
 
 __intrinsic void
-mem_pe_dma_mu_to_ctm(__ctm void *ctm_addr, __mem void *mem_addr, size_t size)
+mem_pe_dma_mu_to_ctm(__ctm40 void *ctm_addr, __mem40 void *mem_addr,
+                     size_t size)
 {
     SIGNAL sig;
 
@@ -84,7 +85,7 @@ mem_pe_dma_mu_to_ctm(__ctm void *ctm_addr, __mem void *mem_addr, size_t size)
 }
 
 __intrinsic void
-__mem_pe_dma_ctm_to_mu(__mem void *mem_addr, __ctm void *ctm_addr,
+__mem_pe_dma_ctm_to_mu(__mem40 void *mem_addr, __ctm40 void *ctm_addr,
                        size_t size, sync_t sync, SIGNAL *sig)
 {
     try_ctassert(__is_aligned(size, 64));
@@ -95,7 +96,8 @@ __mem_pe_dma_ctm_to_mu(__mem void *mem_addr, __ctm void *ctm_addr,
 }
 
 __intrinsic void
-mem_pe_dma_ctm_to_mu(__mem void *mem_addr, __ctm void *ctm_addr, size_t size)
+mem_pe_dma_ctm_to_mu(__mem40 void *mem_addr, __ctm40 void *ctm_addr,
+                     size_t size)
 {
     SIGNAL sig;
 

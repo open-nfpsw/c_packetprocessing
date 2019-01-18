@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2015-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@
 #include <nfp6000/nfp_me.h>
 #include <assert.h>
 #include <nfp/macstats.h>
+#include <nfp/me.h>
+#include <nfp/mem_atomic.h>
+#include <nfp/xpb.h>
 
 
 /* Definitions for MACs/Ports/Channels numbers */
@@ -47,6 +50,12 @@
 #define MACSTATS_PORT_ADDR_LO(_core, _seg) \
                 (MACSTATS_BASE + (_core)* MACSTATS_PER_CORE_PORT_SIZE + \
                  (_seg) * MACSTATS_PER_PORT_SIZE)
+
+/* Sleep between each mac head counter read to reduce the short burst CPP
+ * accesses. */
+#ifndef MAC_HEAD_DROP_SLEEP
+#define MAC_HEAD_DROP_SLEEP 2000
+#endif
 
 /* Read 8 stats values from nbi and write to destination */
 __intrinsic static void
@@ -104,7 +113,7 @@ mac_stats_add(__gpr unsigned int src_hi, __gpr unsigned int src_lo,
 
 int
 macstats_port_read(unsigned int mac, unsigned int port,
-                   __mem struct macstats_port *port_stats)
+                   __mem40 struct macstats_port *port_stats)
 {
     unsigned char core;
     unsigned char seg;
@@ -140,7 +149,7 @@ macstats_port_read(unsigned int mac, unsigned int port,
 
 int
 macstats_port_accum(unsigned int mac, unsigned int port,
-                    __mem struct macstats_port_accum *port_stats)
+                    __mem40 struct macstats_port_accum *port_stats)
 {
     unsigned char core;
     unsigned char seg;
@@ -182,7 +191,7 @@ macstats_port_accum(unsigned int mac, unsigned int port,
 
 int
 macstats_channel_read(unsigned int mac, unsigned int channel,
-                      __mem struct macstats_channel *channel_stats)
+                      __mem40 struct macstats_channel *channel_stats)
 {
     __gpr unsigned int src_hi;
     __gpr unsigned int src_lo;
@@ -211,7 +220,7 @@ macstats_channel_read(unsigned int mac, unsigned int channel,
 
 int
 macstats_channel_accum(unsigned int mac, unsigned int channel,
-                       __mem struct macstats_channel_accum *channel_stats)
+                       __mem40 struct macstats_channel_accum *channel_stats)
 {
     __gpr unsigned int src_hi;
     __gpr unsigned int src_lo;
@@ -246,4 +255,69 @@ macstats_channel_accum(unsigned int mac, unsigned int channel,
     channel_stats->TxCIfOutOctets_unused = 0;
 
     return 0;
+}
+
+__intrinsic int
+__macstats_head_drop_accum(unsigned int nbi, unsigned int core,
+                           unsigned short ports_mask,
+                           __mem40 struct macstats_head_drop_accum *port_stats,
+                           unsigned int break_cpp_burst)
+{
+    __gpr uint32_t addr;
+    __xwrite uint64_t add_val[2];
+    __gpr uint32_t drop_pair;
+    __gpr int add_even;
+    __gpr int add_odd;
+    int i;
+    int ret = 0;
+
+    ctassert(__is_ct_const(break_cpp_burst));
+
+    if (nbi > 1) {
+        ret = -1;
+        goto out;
+    }
+    if (core > (NFP_MAX_MAC_CORES_PER_MAC_ISL - 1)) {
+        ret = -1;
+        goto out;
+    }
+
+    addr = NFP_MAC_XPB_OFF(nbi);
+
+    if (core == 0)
+        addr += NFP_MAC_CSR_ETH0_IG_HEAD_DROP_CNTR_PAIR(0);
+    else
+        addr += NFP_MAC_CSR_ETH1_IG_HEAD_DROP_CNTR_PAIR(0);
+
+    for (i = 0 ; i < NFP_MAX_ETH_PORTS_PER_MAC_CORE ; i+=2) {
+        add_even = ports_mask & (1 << i);
+        add_odd  = ports_mask & (1 << (i + 1));
+        if (add_even || add_odd) {
+            drop_pair = xpb_read(addr + (i << 1));
+            add_val[0] = ((uint64_t)(drop_pair & 0xffff) << 32);
+            add_val[1] = ((uint64_t)((drop_pair >> 16) & 0xffff) << 32);
+            if (add_even)
+                mem_add64(&add_val[0], &port_stats->ports_drop[i],
+                          sizeof(uint64_t));
+            if (add_odd)
+                mem_add64(&add_val[1], &port_stats->ports_drop[i + 1],
+                          sizeof(uint64_t));
+
+            if (break_cpp_burst) {
+                /* Spread the short bursts of CPP commands this loop is
+                * generating to minimize DSF port utilization issues. */
+                sleep(MAC_HEAD_DROP_SLEEP);
+            }
+        }
+    }
+out:
+    return ret;
+}
+
+__intrinsic int
+macstats_head_drop_accum(unsigned int nbi, unsigned int core,
+                         unsigned short ports_mask,
+                         __mem40 struct macstats_head_drop_accum *port_stats)
+{
+    return __macstats_head_drop_accum(nbi, core, ports_mask, port_stats, 0);
 }

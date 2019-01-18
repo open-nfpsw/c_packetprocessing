@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2015-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,34 @@
 #include <nfp/mem_atomic.h>
 #include <nfp/mem_bulk.h>
 
+/*
+ * Mapping between channel and TM queue
+ */
 #ifndef NBI
 #define NBI 0
 #endif
 
 #ifndef PKT_NBI_OFFSET
-#define PKT_NBI_OFFSET 64
+#define PKT_NBI_OFFSET 128
 #endif
+
+/* DEBUG MACROS */
+
+__volatile __export __emem uint32_t debug[8192*64];
+__volatile __export __emem uint32_t debug_idx;
+#define DEBUG(_a, _b, _c, _d) do { \
+    __xrw uint32_t _idx_val = 4; \
+    __xwrite uint32_t _dvals[4]; \
+    mem_test_add(&_idx_val, \
+            (__mem40 void *)&debug_idx, sizeof(_idx_val)); \
+    _dvals[0] = _a; \
+    _dvals[1] = _b; \
+    _dvals[2] = _c; \
+    _dvals[3] = _d; \
+    mem_write_atomic(_dvals, (__mem40 void *)\
+                    (debug + (_idx_val % (1024 * 64))), sizeof(_dvals)); \
+    } while(0)
+
 
 /* Counters */
 struct counters {
@@ -78,7 +99,7 @@ struct pkt_rxed {
 
 __intrinsic void
 stats_packet( struct pkt_rxed *pkt_rxed,
-              __mem struct pkt_hdr *pkt_hdr )
+              __mem40 struct pkt_hdr *pkt_hdr )
 {
     __xwrite uint32_t bytes_to_add;
     SIGNAL   sig;
@@ -103,14 +124,14 @@ stats_packet( struct pkt_rxed *pkt_rxed,
     }
 }
 
-__mem struct pkt_hdr *
+__mem40 struct pkt_hdr *
 receive_packet( struct pkt_rxed *pkt_rxed,
                 size_t size )
 {
     __xread struct pkt_rxed pkt_rxed_in;
     int island, pnum;
     int pkt_off;
-    __mem struct pkt_hdr *pkt_hdr;
+    __mem40 struct pkt_hdr *pkt_hdr;
 
     pkt_nbi_recv(&pkt_rxed_in, sizeof(pkt_rxed->nbi_meta));
     pkt_rxed->nbi_meta = pkt_rxed_in.nbi_meta;
@@ -128,7 +149,7 @@ receive_packet( struct pkt_rxed *pkt_rxed,
 
 void
 rewrite_packet( struct pkt_rxed *pkt_rxed,
-                __mem struct pkt_hdr *pkt_hdr )
+                __mem40 struct pkt_hdr *pkt_hdr )
 {
     int vlan;
 
@@ -143,7 +164,7 @@ rewrite_packet( struct pkt_rxed *pkt_rxed,
 
 void
 count_packet( struct pkt_rxed *pkt_rxed,
-              __mem struct pkt_hdr *pkt_hdr )
+              __mem40 struct pkt_hdr *pkt_hdr )
 {
     if (pkt_rxed->pkt_hdr.pkt.tpid!=0x8100) {
         mem_incr64(&counters.no_vlan);
@@ -160,36 +181,44 @@ count_packet( struct pkt_rxed *pkt_rxed,
 
 void
 send_packet( struct nbi_meta_catamaran *nbi_meta,
-              __mem struct pkt_hdr *pkt_hdr )
+              __mem40 struct pkt_hdr *pkt_hdr )
 {
     int island, pnum, plen;
     int pkt_off;
     __gpr struct pkt_ms_info msi;
-    __addr40 char *pbuf;
+    __mem40 char *pbuf;
+    uint16_t q_dst = 0;
 
     /* Write the MAC egress CMD and adjust offset and len accordingly */
-    pkt_off = PKT_NBI_OFFSET;
+    pkt_off = PKT_NBI_OFFSET + MAC_PREPEND_BYTES;
     island = nbi_meta->pkt_info.isl;
     pnum   = nbi_meta->pkt_info.pnum;
     pbuf   = pkt_ctm_ptr40(island, pnum, 0);
-    plen   = nbi_meta->pkt_info.len;
+    plen   = nbi_meta->pkt_info.len - MAC_PREPEND_BYTES;
 
-    pkt_off += MAC_PREPEND_BYTES;
-    plen -= MAC_PREPEND_BYTES;
+    /* Set egress tm queue.
+     * Set tm_que to mirror pkt to port on which in ingressed. */
+    q_dst  = PORT_TO_CHANNEL(nbi_meta->port);
+
     pkt_mac_egress_cmd_write(pbuf, pkt_off, 1, 1); // Write data to make the packet MAC egress generate L3 and L4 checksums
 
-    pkt_off -= 4;
-    plen += 4;
     msi = pkt_msd_write(pbuf, pkt_off); // Write a packet modification script of NULL
-    pkt_nbi_send(island, pnum, &msi, plen, NBI, 0,
-                 nbi_meta->seqr, nbi_meta->seq, PKT_CTM_SIZE_256);
+    pkt_nbi_send(island,
+                 pnum,
+                 &msi,
+                 plen,
+                 NBI,
+                 q_dst,
+                 nbi_meta->seqr,
+                 nbi_meta->seq,
+                 PKT_CTM_SIZE_256);
 }
 
 int
 main(void)
 {
     struct pkt_rxed pkt_rxed; /* The packet header received by the thread */
-    __mem struct pkt_hdr *pkt_hdr;    /* The packet in the CTM */
+    __mem40 struct pkt_hdr *pkt_hdr;    /* The packet in the CTM */
 
     /*
      * Endless loop
@@ -202,6 +231,7 @@ main(void)
      */
     for (;;) {
         /* Receive a packet */
+
         pkt_hdr = receive_packet(&pkt_rxed, sizeof(pkt_rxed));
 
         /* Rewrite the packet */
@@ -215,6 +245,7 @@ main(void)
 
         /* Send the packet */
         send_packet(&pkt_rxed.nbi_meta, pkt_hdr);
+
     }
 
     return 0;

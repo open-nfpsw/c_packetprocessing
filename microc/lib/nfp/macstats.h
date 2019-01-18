@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015,  Netronome Systems, Inc.  All rights reserved.
+ * Copyright (C) 2015-2018,  Netronome Systems, Inc.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 
 #include <nfp.h>
 #include <stdint.h>
+#include <nfp6000/nfp_mac.h>
 
 /**
  * This file contains the API for reading and accumulating MAC statistics.
@@ -151,11 +152,11 @@ struct macstats_port_accum {
     uint64_t RxCBFCPauseFramesReceived6;
     uint64_t RxCBFCPauseFramesReceived7;
     uint64_t RxMacCtlFramesReceived;
+    uint64_t RxMacHeadDrop;
     uint64_t unused0;
     uint64_t unused1;
     uint64_t unused2;
-    uint64_t unused3;
-    uint64_t unused4;
+    uint64_t TxQueueDrop;
     uint64_t TxPIfOutOctets;
     uint64_t TxPIfOutOctets_unused;
     uint64_t TxVlanTransmittedOK;
@@ -261,6 +262,53 @@ struct macstats_channel_accum {
     uint64_t TxCIfOutBroadCastPkts;
 };
 
+/* Per port mac head drop counters accumulation */
+struct macstats_head_drop_accum {
+    /* We have 12 ports */
+    uint64_t ports_drop[NFP_MAX_ETH_PORTS_PER_MAC_CORE];
+};
+
+/**
+ * Accumulates the per port mac head drop counters.
+ * @param nbi               The nbi to read from (0/1)
+ * @param core              The MAC core to read from (0/1)
+ * @param ports_mask        A 16 bits ports mask configuration used, each bit
+ *                          indicates if a port is in use. Only bits 0-11 are
+ *                          used.
+ * @param port_stats        A pointer to the accumulate stats struct to update,
+ *                          must be in ctm/imem/emem only
+ * @param break_cpp_burst   A flag indicating if this function should sleep
+ *                          between loops to avoid a burst of CPP commands.
+ *                          This should only be used if the current ctx is not
+ *                          already waiting for an alarm to fire.
+ *                          (using the CTX_FUTURE_COUNT mechanism).
+ *
+ * @return 0 on success, -1 on error
+ */
+int __macstats_head_drop_accum(unsigned int nbi, unsigned int core,
+        unsigned short ports_mask,
+        __mem40 struct macstats_head_drop_accum *port_stats,
+        unsigned int break_cpp_burst);
+
+/**
+ * Accumulates the per port mac head drop counters.
+ * @param nbi               The nbi to read from (0/1)
+ * @param core              The MAC core to read from (0/1)
+ * @param ports_mask        A 16 bits ports mask configuration used, each bit
+ *                          indicates if a port is in use. Only bits 0-11 are
+ *                          used.
+ * @param port_stats        A pointer to the accumulate stats struct to update,
+ *                          must be in ctm/imem/emem only
+ *
+ * This API simply calls the __macstats_head_drop_accum with the
+ * break_cpp_burst set to 0.
+ *
+ * @return 0 on success, -1 on error
+ */
+int macstats_head_drop_accum(unsigned int nbi, unsigned int core,
+        unsigned short ports_mask,
+        __mem40 struct macstats_head_drop_accum *port_stats);
+
 /**
  * Reads and clears MAC stats for a given port.
  * @param mac         The mac to read from (0/1)
@@ -270,7 +318,7 @@ struct macstats_channel_accum {
  * @return 0 on success, -1 on error
  */
 int macstats_port_read(unsigned int mac, unsigned int port,
-                       __mem struct macstats_port *port_stats);
+                       __mem40 struct macstats_port *port_stats);
 
 /**
  * Accumulate MAC stats for a given port.
@@ -281,7 +329,7 @@ int macstats_port_read(unsigned int mac, unsigned int port,
  * @return 0 on success, -1 on error
  */
 int macstats_port_accum(unsigned int mac, unsigned int port,
-                        __mem struct macstats_port_accum *port_stats);
+                        __mem40 struct macstats_port_accum *port_stats);
 
 
 /**
@@ -293,7 +341,7 @@ int macstats_port_accum(unsigned int mac, unsigned int port,
  * @return 0 on success, -1 on error
  */
 int macstats_channel_read(unsigned int mac, unsigned int channel,
-                          __mem struct macstats_channel *channel_stats);
+                          __mem40 struct macstats_channel *channel_stats);
 
 /**
  * Accumulate MAC stats for a given channel.
@@ -304,6 +352,6 @@ int macstats_channel_read(unsigned int mac, unsigned int channel,
  * @return 0 on success, -1 on error
  */
 int macstats_channel_accum(unsigned int mac, unsigned int channel,
-                           __mem struct macstats_channel_accum *channel_stats);
+        __mem40 struct macstats_channel_accum *channel_stats);
 
 #endif /* !_NFP__MACSTATS_H_ */

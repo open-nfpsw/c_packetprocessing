@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file        blm.h
- * @brief
+ * @file        blm_internal.h
+ * @brief       Internal definitions for BLM
  */
 
-#ifndef __NFP_BLM_H__
-#define __NFP_BLM_H__
-
-#include "libblm.h"
+#ifndef __NFP_BLM_INTERNAL_H__
+#define __NFP_BLM_INTERNAL_H__
 
 /* Internal use constants */
 #define BLM_BLQ_NON_SPLIT_MODE  1
@@ -62,14 +60,11 @@
 #define BLM_LM_BLQ_DMA_EVNT_PEND_CNT_OFFSET     2
 #define BLM_LM_BLQ_NULL_RECYCLE_OFFSET          3
 #define BLM_LM_BLQ_CACHE_RDWR_BUSY_OFFSET       4
-#define BLM_BLQ_CACHE_LWM                       64
 
 #define BLM_MAX_DMA_PENDING_EVNTS               5
+#define BLM_NBI_BLQ_CACHE_DEFICIT               47
 
 /* BLM Stats */
-#define BLQ_MAX_CACHE_CNT                 (256)
-#define_eval BLQ_CACHE_SIZE               (BLQ_MAX_CACHE_CNT * 4)
-#define_eval BLM_BLQ_CACHE_HWM            (BLQ_MAX_CACHE_CNT - 47)
 #define BLQ_STATS_SIZE                    128
 
 .declare_resource BLQ_STATS_OFFSETS island BLQ_STATS_SIZE
@@ -258,4 +253,4 @@
     #endif
 #endm
 
-#endif // __NFP_BLM_H__
+#endif /* __NFP_BLM_INTERNAL_H__ */

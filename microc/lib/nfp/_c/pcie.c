@@ -1,18 +1,6 @@
 /*
  * Copyright (C) 2014-2015,  Netronome Systems, Inc.  All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
  * @file          lib/nfp/_c/pcie.c
  * @brief         NFP PCIe interface
  */
@@ -40,21 +28,15 @@ struct _pcie_dma_cfg_word_access {
     };
 };
 
-__intrinsic void
-pcie_c2p_barcfg_set(unsigned int pcie_isl, unsigned char bar_idx,
-                    unsigned int addr_hi, unsigned int addr_lo,
-                    unsigned char req_id)
-{
-    unsigned int isl, bar_addr, tmp = 0;
-    __xwrite unsigned int wr_val;
-    __xread unsigned int rd_val;
-    SIGNAL wr_sig, rd_sig;
 
-    isl = pcie_isl << 30;
-    bar_addr = NFP_PCIE_BARCFG_C2P(bar_idx);
+__intrinsic unsigned int
+pcie_c2p_barcfg_val(unsigned int addr_hi, unsigned int addr_lo,
+                    unsigned int req_id)
+{
+    unsigned int tmp;
 
     __asm dbl_shf[tmp, addr_hi, addr_lo, >>27];
-    tmp &= NFP_PCIE_BARCFG_C2P_ADDR_msk;
+    tmp = tmp & NFP_PCIE_BARCFG_C2P_ADDR_msk;
 
     /* Configure RID if req_id is non-zero or not constant */
     if ((!__is_ct_const(req_id)) || (req_id != 0)) {
@@ -62,7 +44,46 @@ pcie_c2p_barcfg_set(unsigned int pcie_isl, unsigned char bar_idx,
         tmp |= NFP_PCIE_BARCFG_C2P_ARI(req_id);
     }
 
-    wr_val = tmp;
+    return tmp;
+}
+
+
+__intrinsic void
+pcie_c2p_barcfg_set_expl(unsigned int pcie_isl, unsigned char bar_idx,
+                         unsigned int bar_val)
+{
+    unsigned int isl, bar_addr;
+    __xwrite unsigned int wr_val;
+    __xread unsigned int rd_val;
+    SIGNAL wr_sig, rd_sig;
+
+    isl = pcie_isl << 30;
+    bar_addr = NFP_PCIE_BARCFG_C2P(bar_idx);
+
+    wr_val = bar_val;
+
+    __asm {
+        pcie[write_pci, wr_val, isl, <<8, bar_addr, 1], sig_done[wr_sig];
+        pcie[read_pci, rd_val, isl, <<8, bar_addr, 1], sig_done[rd_sig];
+    }
+    wait_for_all(&wr_sig, &rd_sig);
+}
+
+
+__intrinsic void
+pcie_c2p_barcfg_set(unsigned int pcie_isl, unsigned char bar_idx,
+                    unsigned int addr_hi, unsigned int addr_lo,
+                    unsigned char req_id)
+{
+    unsigned int isl, bar_addr;
+    __xwrite unsigned int wr_val;
+    __xread unsigned int rd_val;
+    SIGNAL wr_sig, rd_sig;
+
+    isl = pcie_isl << 30;
+    bar_addr = NFP_PCIE_BARCFG_C2P(bar_idx);
+
+    wr_val = pcie_c2p_barcfg_val(addr_hi, addr_lo, req_id);
 
     __asm {
         pcie[write_pci, wr_val, isl, <<8, bar_addr, 1], sig_done[wr_sig];
@@ -86,7 +107,7 @@ do {                                                                    \
     try_ctassert(size <= 128);                                          \
     ctassert(sync == sig_done || sync == ctx_swap);                     \
                                                                         \
-    addr = (isl << 30) | ((bar & 0x7) << 27) | ((addr_hi & 0xf) << 24); \
+    addr = (isl << 30) | ((bar & 0x7) << 27) | ((addr_hi & 0x7) << 24); \
                                                                         \
     if (__is_ct_const(size)) {                                          \
         if (size <= 32) {                                               \
