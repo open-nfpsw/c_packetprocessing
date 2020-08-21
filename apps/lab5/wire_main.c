@@ -190,7 +190,7 @@ send_packet( struct nbi_meta_catamaran *nbi_meta,
     uint16_t q_dst = 0;
 
     /* Write the MAC egress CMD and adjust offset and len accordingly */
-    pkt_off = PKT_NBI_OFFSET + MAC_PREPEND_BYTES;
+    pkt_off = PKT_NBI_OFFSET + 2 * MAC_PREPEND_BYTES;
     island = nbi_meta->pkt_info.isl;
     pnum   = nbi_meta->pkt_info.pnum;
     pbuf   = pkt_ctm_ptr40(island, pnum, 0);
@@ -202,7 +202,7 @@ send_packet( struct nbi_meta_catamaran *nbi_meta,
 
     pkt_mac_egress_cmd_write(pbuf, pkt_off, 1, 1); // Write data to make the packet MAC egress generate L3 and L4 checksums
 
-    msi = pkt_msd_write(pbuf, pkt_off); // Write a packet modification script of NULL
+    msi = pkt_msd_write(pbuf, pkt_off - MAC_PREPEND_BYTES); // Write a packet modification script of NULL
     pkt_nbi_send(island,
                  pnum,
                  &msi,
